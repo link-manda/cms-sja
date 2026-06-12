@@ -37,18 +37,19 @@ jobs:
         run: rm -rf node_modules tests .github docs _cms-sja-excluded
 
       - name: 🚀 Upload ke ZenHosta via SFTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          protocol: sftp
+          server: ${{ secrets.SFTP_SERVER }}
           port: 22
-          server-dir: /cms-core/
+          username: ${{ secrets.SFTP_USERNAME }}
+          password: ${{ secrets.SFTP_PASSWORD }}
+          local_path: ./*
+          remote_path: /cms-core/
+          delete_remote_files: false
+          sftp_only: true
           exclude: |
-            **/.git*
-            **/.git*/**
-            **/node_modules/**
+            .git/**
+            node_modules/**
             tests/**
             .github/**
             docs/**
