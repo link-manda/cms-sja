@@ -1,0 +1,64 @@
+name: Deploy Laravel to IDCloudhost
+
+on:
+  push:
+    branches:
+      - main # Script berjalan saat ada push ke branch main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Mengambil Kode dari GitHub
+        uses: actions/checkout@v4
+
+      - name: 🐘 Setup PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, xml, ctype, iconv, intl, pdo_mysql, bcmath, curl, dom, fileinfo, zip, gd
+
+      - name: 📦 Install Dependensi PHP (Composer)
+        run: composer install -q --no-ansi --no-interaction --no-progress --prefer-dist --optimize-autoloader --no-dev
+
+      - name: 🟢 Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 🛠️ Build Aset Frontend (Vite/Tailwind)
+        run: |
+          npm ci
+          npm run build
+
+      - name: 🧹 Bersihkan File Tidak Perlu
+        run: rm -rf node_modules tests .github docs _cms-sja-excluded
+
+      - name: 🚀 Upload File ke IDCloudhost via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: /cms-sja/  # Sesuaikan dengan folder di cPanel
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            tests/**
+            .github/**
+            docs/**
+            _cms-sja-excluded/**
+            phpunit.xml
+            .env.example
+            .env
+            README.md
+            CLAUDE.md
+            storage/logs/*.log
+            storage/framework/cache/*
+            storage/framework/sessions/*
+            storage/framework/views/*
+            bootstrap/cache/*
+
