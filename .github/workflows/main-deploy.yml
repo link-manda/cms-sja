@@ -34,7 +34,25 @@ jobs:
         npm run build
 
     - name: 🗜️ Compress files
-      run: tar -czf deploy.tar.gz --exclude='.git' --exclude='.github' --exclude='node_modules' --exclude='.env' --exclude='.env.example' --exclude='tests' --exclude='_cms-sja-excluded' --exclude='docs' --exclude='phpunit.xml' --exclude='README.md' --exclude='CLAUDE.md' --exclude='storage/logs/*' --exclude='storage/framework/cache/*' --exclude='storage/framework/sessions/*' --exclude='storage/framework/views/*' --exclude='bootstrap/cache/*' .
+      run: |
+        tar -czf /tmp/deploy.tar.gz \
+          --exclude='.git' \
+          --exclude='.github' \
+          --exclude='node_modules' \
+          --exclude='.env' \
+          --exclude='.env.example' \
+          --exclude='tests' \
+          --exclude='_cms-sja-excluded' \
+          --exclude='docs' \
+          --exclude='phpunit.xml' \
+          --exclude='README.md' \
+          --exclude='CLAUDE.md' \
+          --exclude='storage/logs/*' \
+          --exclude='storage/framework/cache/*' \
+          --exclude='storage/framework/sessions/*' \
+          --exclude='storage/framework/views/*' \
+          --exclude='bootstrap/cache/*' \
+          . || true
 
     - name: 🚀 Upload to Server via SCP
       uses: appleboy/scp-action@v0.1.7
@@ -42,7 +60,7 @@ jobs:
         host: ${{ secrets.SSH_HOST }}
         username: ${{ secrets.SSH_USERNAME }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
-        source: "deploy.tar.gz"
+        source: "/tmp/deploy.tar.gz"
         target: "/home/sistemja/"
 
     - name: 💥 Extract and Deploy via SSH
