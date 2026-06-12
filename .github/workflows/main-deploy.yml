@@ -1,77 +1,65 @@
-name: Deploy Laravel via SFTP
+name: Deploy Web CMS ke ZenHosta
 
 on:
   push:
     branches:
-      - main # Script berjalan saat ada push ke branch main
+      - main # Script berjalan setiap kali ada push ke branch main
 
 jobs:
-  build-and-deploy:
+  web-deploy:
+    name: 🎉 Deploy via SSH (Encrypted Key)
     runs-on: ubuntu-latest
-
     steps:
-      - name: 📥 Mengambil Kode dari GitHub
-        uses: actions/checkout@v4
+    - name: 🚚 Get latest code
+      uses: actions/checkout@v4
 
-      - name: 🐘 Setup PHP 8.3
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.3'
-          extensions: mbstring, xml, ctype, iconv, intl, pdo_mysql, bcmath, curl, dom, fileinfo, zip, gd
+    - name: 🛠️ Setup PHP 8.3
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.3'
+        extensions: mbstring, xml, ctype, iconv, intl, pdo_mysql, bcmath, curl, dom, fileinfo, zip, gd
 
-      - name: 📦 Install Dependensi PHP (Composer)
-        run: composer install -q --no-ansi --no-interaction --no-progress --prefer-dist --optimize-autoloader --no-dev
+    - name: 📦 Install Composer Dependencies
+      run: composer install -q --no-ansi --no-interaction --no-progress --prefer-dist --optimize-autoloader --no-dev
 
-      - name: 🟢 Setup Node.js 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
+    - name: 🟢 Setup Node.js 20
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
 
-      - name: 🛠️ Build Aset Frontend (Vite/Tailwind)
-        run: |
-          npm ci
-          npm run build
+    - name: 🏗️ Build Frontend Assets (Tailwind/Vite)
+      run: |
+        npm ci
+        npm run build
 
-      - name: 🧹 Bersihkan File Tidak Perlu
-        run: rm -rf node_modules tests .github docs _cms-sja-excluded
+    - name: 🗜️ Compress files
+      run: tar -czf deploy.tar.gz --exclude='.git' --exclude='.github' --exclude='node_modules' --exclude='.env' --exclude='.env.example' --exclude='tests' --exclude='_cms-sja-excluded' --exclude='docs' --exclude='phpunit.xml' --exclude='README.md' --exclude='CLAUDE.md' --exclude='storage/logs/*' --exclude='storage/framework/cache/*' --exclude='storage/framework/sessions/*' --exclude='storage/framework/views/*' --exclude='bootstrap/cache/*' .
 
-      - name: 🔑 Install sshpass
-        run: sudo apt-get install -y sshpass
+    - name: 🚀 Upload to Server via SCP
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        source: "deploy.tar.gz"
+        target: "/home/sistemja/"
 
-      - name: 🚀 Deploy ke Server via Rsync (SSH)
-        run: |
-          sshpass -p "${{ secrets.FTP_PASSWORD }}" rsync -avz \
-            -e "ssh -o StrictHostKeyChecking=no" \
-            --exclude='.git/' \
-            --exclude='node_modules/' \
-            --exclude='.env' \
-            --exclude='.env.example' \
-            --exclude='storage/logs/*' \
-            --exclude='storage/framework/cache/*' \
-            --exclude='storage/framework/sessions/*' \
-            --exclude='storage/framework/views/*' \
-            --exclude='storage/app/private/*' \
-            --exclude='storage/app/public/*' \
-            --exclude='bootstrap/cache/*' \
-            --exclude='tests/' \
-            --exclude='.github/' \
-            --exclude='docs/' \
-            --exclude='_cms-sja-excluded/' \
-            --exclude='phpunit.xml' \
-            --exclude='README.md' \
-            --exclude='CLAUDE.md' \
-            ./ ${{ secrets.FTP_USERNAME }}@${{ secrets.FTP_SERVER }}:/home/sistemja/cms-core/
-
-      - name: ⚙️ Post-Deploy (Artisan Commands di Server)
-        run: |
-          sshpass -p "${{ secrets.FTP_PASSWORD }}" ssh -o StrictHostKeyChecking=no \
-            ${{ secrets.FTP_USERNAME }}@${{ secrets.FTP_SERVER }} << 'EOF'
-            cd /home/sistemja/cms-core
-            php artisan config:cache
-            php artisan route:cache
-            php artisan view:cache
-            php artisan migrate --force
-            php artisan storage:link 2>/dev/null || true
-            echo "Deploy selesai!"
-          EOF
+    - name: 💥 Extract and Deploy via SSH
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          cd /home/sistemja/
+          mkdir -p cms-core
+          tar -xzf deploy.tar.gz -C cms-core/
+          rm deploy.tar.gz
+          cd cms-core
+          php artisan config:cache
+          php artisan route:cache
+          php artisan view:cache
+          php artisan migrate --force
+          php artisan storage:link 2>/dev/null || true
+          echo "Deploy selesai!"
