@@ -42,35 +42,9 @@ jobs:
         local_path: '.'
         remote_path: '/home/sistemja/core-cms'
         sftpArgs: '-o StrictHostKeyChecking=no'
-        delete_remote_files: true
+        delete_remote_files: false
 
-    # Step 2: Buat custom index.php untuk public_html
-    - name: 🔧 Generate custom public/index.php
-      run: |
-        cat > public/index.php << 'PHP'
-        <?php
-
-        use Illuminate\Foundation\Application;
-        use Illuminate\Http\Request;
-
-        define('LARAVEL_START', microtime(true));
-
-        // Determine if the application is in maintenance mode...
-        if (file_exists($maintenance = __DIR__.'/../core-cms/storage/framework/maintenance.php')) {
-            require $maintenance;
-        }
-
-        // Register the Composer autoloader...
-        require __DIR__.'/../core-cms/vendor/autoload.php';
-
-        // Bootstrap Laravel and handle the request...
-        /** @var Application $app */
-        $app = require_once __DIR__.'/../core-cms/bootstrap/app.php';
-
-        $app->handleRequest(Request::capture());
-        PHP
-
-    # Step 3: Deploy isi public/ ke /public_html/
+    # Step 2: Deploy isi public/ ke /public_html/
     - name: 📂 Deploy Public Assets ke /public_html/
       uses: wlixcc/SFTP-Deploy-Action@v1.2.4
       with:
@@ -81,4 +55,4 @@ jobs:
         local_path: './public'
         remote_path: '/home/sistemja/public_html'
         sftpArgs: '-o StrictHostKeyChecking=no'
-        delete_remote_files: true
+        delete_remote_files: false
