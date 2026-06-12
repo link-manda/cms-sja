@@ -94,24 +94,34 @@ jobs:
         echo "=== Setting up SSH key locally ==="
         mkdir -p ~/.ssh
         
-        # Write private key
+        # Write private key properly (preserve newlines)
         echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
-        chmod 600 ~/.ssh/deploy_key
         
-        # Verify key file
+        # Verify key file exists and has content
         if [ ! -f ~/.ssh/deploy_key ] || [ ! -s ~/.ssh/deploy_key ]; then
           echo "❌ ERROR: SSH key file not created or empty!"
           exit 1
         fi
+        
+        # Set proper permissions FIRST
+        chmod 600 ~/.ssh/deploy_key
         echo "✅ SSH private key file created ($(wc -c < ~/.ssh/deploy_key) bytes)"
+        
+        # Verify key format
+        if ! grep -q "BEGIN.*PRIVATE KEY" ~/.ssh/deploy_key; then
+          echo "❌ ERROR: SSH key format invalid - check if secret was copied correctly"
+          echo "Key should start with '-----BEGIN PRIVATE KEY-----' or '-----BEGIN RSA PRIVATE KEY-----'"
+          exit 1
+        fi
+        echo "✅ SSH key format is valid"
         
         # Add known_hosts (prevents "authenticity" prompt)
         echo "=== Adding host to known_hosts ==="
         ssh-keyscan -t ed25519,rsa -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts 2>/dev/null && \
           echo "✅ Host key added to known_hosts" || \
-          echo "⚠️  Could not fetch host key (may fail later)"
+          echo "⚠️  Could not fetch host key (will accept on first run)"
         
-        # Set proper permissions
+        # Set proper permissions on SSH directory
         chmod 700 ~/.ssh
         echo "✅ SSH directory configured"
 
