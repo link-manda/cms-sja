@@ -54,7 +54,7 @@ jobs:
           --exclude='bootstrap/cache/*' \
           . || true
 
-    - name: 🔍 Debug SSH Connectivity (Phase 1: Secrets & Network)
+    - name: Debug SSH Connectivity (Phase 1 - Secrets & Network)
       run: |
         echo "=== Layer 1: Verifying SSH Secrets in Workflow ==="
         SSH_HOST="${{ secrets.SSH_HOST }}"
@@ -87,7 +87,7 @@ jobs:
           echo "⚠️  nc not available, skipping this check"
         fi
 
-    - name: 🔑 Setup SSH Key (Phase 2: Local SSH Configuration)
+    - name: Setup SSH Key (Phase 2 - Local SSH Configuration)
       env:
         SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
       run: |
@@ -115,7 +115,7 @@ jobs:
         chmod 700 ~/.ssh
         echo "✅ SSH directory configured"
 
-    - name: 🚀 Upload to Server via SCP (Phase 3: SCP Transfer)
+    - name: Upload to Server via SCP (Phase 3 - SCP Transfer)
       run: |
         echo "=== Attempting SCP upload with verbose output ==="
         scp -v -i ~/.ssh/deploy_key \
@@ -132,7 +132,7 @@ jobs:
           exit 1
         fi
 
-    - name: 💥 Extract and Deploy via SSH (Phase 4: Remote Execution)
+    - name: Extract and Deploy via SSH (Phase 4 - Remote Execution)
       run: |
         echo "=== Testing SSH connection with verbose output ==="
         ssh -v -i ~/.ssh/deploy_key \
