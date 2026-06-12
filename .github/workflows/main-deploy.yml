@@ -90,6 +90,7 @@ jobs:
     - name: Setup SSH Key (Phase 2 - Local SSH Configuration)
       env:
         SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        SSH_KEY_PASSPHRASE: ${{ secrets.SSH_KEY_PASSPHRASE }}
       run: |
         echo "=== Setting up SSH key locally ==="
         mkdir -p ~/.ssh
@@ -104,6 +105,25 @@ jobs:
           exit 1
         fi
         echo "✅ SSH private key file created ($(wc -c < ~/.ssh/deploy_key) bytes)"
+        
+        # Start ssh-agent and load the encrypted key with its passphrase.
+        # This is required because the private key is passphrase-protected and
+        # there is no TTY available in CI to enter the passphrase interactively.
+        # We use SSH_ASKPASS (supported since OpenSSH 8.4) so that ssh-add can
+        # retrieve the passphrase without prompting a terminal.
+        echo "=== Starting ssh-agent and loading encrypted key ==="
+        eval "$(ssh-agent -s)"
+        
+        ASKPASS_SCRIPT=$(mktemp "$RUNNER_TEMP/askpass.XXXXXX")
+        chmod 700 "$ASKPASS_SCRIPT"
+        printf '#!/bin/sh\nprintf "%%s" "$SSH_KEY_PASSPHRASE"\n' > "$ASKPASS_SCRIPT"
+        trap 'rm -f "$ASKPASS_SCRIPT"' EXIT
+        SSH_ASKPASS="$ASKPASS_SCRIPT" SSH_ASKPASS_REQUIRE=force ssh-add ~/.ssh/deploy_key
+        echo "✅ SSH key loaded into agent"
+        
+        # Export agent socket and PID so subsequent steps can use the agent
+        echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> "$GITHUB_ENV"
+        echo "SSH_AGENT_PID=$SSH_AGENT_PID" >> "$GITHUB_ENV"
         
         # Add known_hosts (prevents "authenticity" prompt)
         echo "=== Adding host to known_hosts ==="
