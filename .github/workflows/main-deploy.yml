@@ -7,7 +7,7 @@ on:
 
 jobs:
   web-deploy:
-    name: 🎉 Deploy via FTP
+    name: 🎉 Deploy via SFTP
     runs-on: ubuntu-latest
     steps:
     - name: 🚚 Get latest code
@@ -33,21 +33,21 @@ jobs:
 
     # Step 1: Deploy Laravel core ke /core-cms/
     - name: 📂 Deploy Laravel Core ke /core-cms/
-      uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      uses: wlixcc/SFTP-Deploy-Action@v1.2.4
       with:
         server: ${{ secrets.FTP_SERVER }}
         username: ${{ secrets.FTP_USERNAME }}
         password: ${{ secrets.FTP_PASSWORD }}
-        protocol: ftps
-        security: strict
-        server-dir: /core-cms/
+        port: 22
+        local_path: '.'
+        remote_path: '/home/sistemja/core-cms'
+        sftpArgs: '-o StrictHostKeyChecking=no'
         exclude: |
-          **/.git*
-          **/.git*/**
-          **/node_modules/**
-          **/tests/**
-          **/.github/**
-          **/public/**
+          .git*
+          node_modules
+          tests
+          .github
+          public
           .env
           .env.example
           phpunit.xml
@@ -82,17 +82,12 @@ jobs:
 
     # Step 3: Deploy isi public/ ke /public_html/
     - name: 📂 Deploy Public Assets ke /public_html/
-      uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      uses: wlixcc/SFTP-Deploy-Action@v1.2.4
       with:
         server: ${{ secrets.FTP_SERVER }}
         username: ${{ secrets.FTP_USERNAME }}
         password: ${{ secrets.FTP_PASSWORD }}
-        protocol: ftps
-        security: strict
-        local-dir: ./public/
-        server-dir: /public_html/
-        exclude: |
-          **/.git*
-          **/.git*/**
-          **/node_modules/**
-          .env
+        port: 22
+        local_path: './public'
+        remote_path: '/home/sistemja/public_html'
+        sftpArgs: '-o StrictHostKeyChecking=no'
