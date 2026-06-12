@@ -1,4 +1,4 @@
-name: Deploy Laravel via FTP
+name: Deploy Laravel via SFTP
 
 on:
   push:
@@ -36,12 +36,14 @@ jobs:
       - name: 🧹 Bersihkan File Tidak Perlu
         run: rm -rf node_modules tests .github docs _cms-sja-excluded
 
-      - name: 🚀 Upload ke ZenHosta via FTP
+      - name: 🚀 Upload ke ZenHosta via SFTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
+          protocol: sftp
+          port: 22
           server-dir: /cms-core/
           exclude: |
             **/.git*
