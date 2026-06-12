@@ -52,7 +52,7 @@ jobs:
         username: ${{ secrets.FTP_USERNAME }}
         ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
         port: 22
-        local_path: './public'
-        remote_path: '/home/sistemja/public_html'
+        local_path: './public/'
+        remote_path: '/home/sistemja/public_html/'
         sftpArgs: '-o StrictHostKeyChecking=no'
         delete_remote_files: false
