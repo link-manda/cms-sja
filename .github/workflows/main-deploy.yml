@@ -1,4 +1,4 @@
-name: Deploy Laravel via SSH
+name: Deploy Laravel via FTP
 
 on:
   push:
@@ -36,43 +36,30 @@ jobs:
       - name: 🧹 Bersihkan File Tidak Perlu
         run: rm -rf node_modules tests .github docs _cms-sja-excluded
 
-      - name: 🔑 Setup Kunci SSH
-        uses: webfactory/ssh-agent@v0.9.0
+      - name: 🚀 Upload ke ZenHosta via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      - name: 🚀 Deploy ke Server via Rsync (SSH)
-        run: |
-          rsync -avz -e "ssh -o StrictHostKeyChecking=no" \
-          --exclude='.git/' \
-          --exclude='node_modules/' \
-          --exclude='.env' \
-          --exclude='.env.example' \
-          --exclude='storage/logs/*' \
-          --exclude='storage/framework/cache/*' \
-          --exclude='storage/framework/sessions/*' \
-          --exclude='storage/framework/views/*' \
-          --exclude='storage/app/private/*' \
-          --exclude='storage/app/public/*' \
-          --exclude='bootstrap/cache/*' \
-          --exclude='tests/' \
-          --exclude='.github/' \
-          --exclude='docs/' \
-          --exclude='_cms-sja-excluded/' \
-          --exclude='phpunit.xml' \
-          --exclude='README.md' \
-          --exclude='CLAUDE.md' \
-          ./ ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:~/cms-core/
-
-      - name: ⚙️ Post-Deploy (Artisan Commands di Server)
-        run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} << 'EOF'
-            cd ~/cms-core
-            php artisan config:cache
-            php artisan route:cache
-            php artisan view:cache
-            php artisan migrate --force
-            php artisan storage:link 2>/dev/null || true
-            echo "Deploy selesai!"
-          EOF
-
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: /cms-core/
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            tests/**
+            .github/**
+            docs/**
+            _cms-sja-excluded/**
+            phpunit.xml
+            .env.example
+            .env
+            README.md
+            CLAUDE.md
+            storage/logs/*.log
+            storage/framework/cache/*
+            storage/framework/sessions/*
+            storage/framework/views/*
+            storage/app/private/*
+            storage/app/public/*
+            bootstrap/cache/*
