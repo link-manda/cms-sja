@@ -3,7 +3,7 @@ name: Deploy Web CMS ke ZenHosta
 on:
   push:
     branches:
-      - main # Script berjalan setiap kali ada push ke branch main
+      - main
 
 jobs:
   web-deploy:
@@ -11,20 +11,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: 🚚 Get latest code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: 🛠️ Setup PHP
       uses: shivammathur/setup-php@v2
       with:
-        php-version: '8.2' # Sesuaikan dengan versi PHP lokal Anda
+        php-version: '8.3'
 
     - name: 📦 Install Composer Dependencies
-      run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist --optimize-autoloader
+      run: composer install -q --no-ansi --no-interaction --no-progress --prefer-dist --optimize-autoloader --no-dev
 
     - name: 🟢 Setup Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '20'
 
     - name: 🏗️ Build Frontend Assets (Tailwind/Vite)
       run: |
@@ -32,7 +32,7 @@ jobs:
         npm run build
 
     - name: 📂 Sync files via FTP to cPanel
-      uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+      uses: SamKirkland/FTP-Deploy-Action@v4.3.5
       with:
         server: ${{ secrets.FTP_SERVER }}
         username: ${{ secrets.FTP_USERNAME }}
@@ -42,4 +42,11 @@ jobs:
           **/.git*
           **/.git*/**
           **/node_modules/**
+          **/tests/**
+          **/.github/**
+          **/storage/**
           .env
+          .env.example
+          phpunit.xml
+          .editorconfig
+          .gitignore
