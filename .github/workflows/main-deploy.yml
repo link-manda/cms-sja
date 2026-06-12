@@ -31,22 +31,64 @@ jobs:
         npm install
         npm run build
 
-    - name: 📂 Sync files via FTP to cPanel
+    # Step 1: Deploy Laravel core ke /core-cms/
+    - name: 📂 Deploy Laravel Core ke /core-cms/
       uses: SamKirkland/FTP-Deploy-Action@v4.3.5
       with:
         server: ${{ secrets.FTP_SERVER }}
         username: ${{ secrets.FTP_USERNAME }}
         password: ${{ secrets.FTP_PASSWORD }}
-        server-dir: /public_html/
+        server-dir: /core-cms/
         exclude: |
           **/.git*
           **/.git*/**
           **/node_modules/**
           **/tests/**
           **/.github/**
-          **/storage/**
+          **/public/**
           .env
           .env.example
           phpunit.xml
           .editorconfig
           .gitignore
+
+    # Step 2: Buat custom index.php untuk public_html
+    - name: 🔧 Generate custom public/index.php
+      run: |
+        cat > public/index.php << 'PHP'
+        <?php
+
+        use Illuminate\Foundation\Application;
+        use Illuminate\Http\Request;
+
+        define('LARAVEL_START', microtime(true));
+
+        // Determine if the application is in maintenance mode...
+        if (file_exists($maintenance = __DIR__.'/../core-cms/storage/framework/maintenance.php')) {
+            require $maintenance;
+        }
+
+        // Register the Composer autoloader...
+        require __DIR__.'/../core-cms/vendor/autoload.php';
+
+        // Bootstrap Laravel and handle the request...
+        /** @var Application $app */
+        $app = require_once __DIR__.'/../core-cms/bootstrap/app.php';
+
+        $app->handleRequest(Request::capture());
+        PHP
+
+    # Step 3: Deploy isi public/ ke /public_html/
+    - name: 📂 Deploy Public Assets ke /public_html/
+      uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      with:
+        server: ${{ secrets.FTP_SERVER }}
+        username: ${{ secrets.FTP_USERNAME }}
+        password: ${{ secrets.FTP_PASSWORD }}
+        local-dir: ./public/
+        server-dir: /public_html/
+        exclude: |
+          **/.git*
+          **/.git*/**
+          **/node_modules/**
+          .env
