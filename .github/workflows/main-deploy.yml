@@ -54,17 +54,41 @@ jobs:
           --exclude='bootstrap/cache/*' \
           . || true
 
-    - name: 🚀 Upload to Server via SCP
-      env:
-        SSHPASS: ${{ secrets.SSH_PASSWORD }}
+    - name: 🔍 Debug SSH Connectivity
       run: |
-        sshpass -e scp -o StrictHostKeyChecking=no /tmp/deploy.tar.gz ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:/home/sistemja/
+        echo "=== Verifying SSH Secrets ==="
+        [ -z "${{ secrets.SSH_HOST }}" ] && echo "❌ SSH_HOST not set" || echo "✅ SSH_HOST is set"
+        [ -z "${{ secrets.SSH_USERNAME }}" ] && echo "❌ SSH_USERNAME not set" || echo "✅ SSH_USERNAME is set"
+        [ -z "${{ secrets.SSH_PRIVATE_KEY }}" ] && echo "❌ SSH_PRIVATE_KEY not set" || echo "✅ SSH_PRIVATE_KEY is set"
+        
+        echo ""
+        echo "=== Testing network connectivity to SSH host ==="
+        timeout 5 bash -c "echo > /dev/tcp/${{ secrets.SSH_HOST }}/22" 2>/dev/null && \
+          echo "✅ Port 22 is reachable" || \
+          echo "❌ Port 22 NOT reachable - check firewall/host configuration"
+
+    - name: 🔑 Setup SSH Key
+      env:
+        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      run: |
+        mkdir -p ~/.ssh
+        echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+        chmod 600 ~/.ssh/deploy_key
+        ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+
+    - name: 🚀 Upload to Server via SCP
+      run: |
+        scp -i ~/.ssh/deploy_key \
+          -o ConnectTimeout=10 \
+          -o StrictHostKeyChecking=accept-new \
+          /tmp/deploy.tar.gz ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:/home/sistemja/
 
     - name: 💥 Extract and Deploy via SSH
-      env:
-        SSHPASS: ${{ secrets.SSH_PASSWORD }}
       run: |
-        sshpass -e ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} << 'EOF'
+        ssh -i ~/.ssh/deploy_key \
+          -o ConnectTimeout=10 \
+          -o StrictHostKeyChecking=accept-new \
+          ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} << 'EOF'
           cd /home/sistemja/
           mkdir -p cms-core
           tar -xzf deploy.tar.gz -C cms-core/
