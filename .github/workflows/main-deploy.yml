@@ -1,9 +1,9 @@
-name: Deploy Laravel via SSH
+name: Deploy Laravel via SFTP
 
 on:
   push:
     branches:
-      - main
+      - main # Script berjalan saat ada push ke branch main
 
 jobs:
   build-and-deploy:
@@ -11,67 +11,37 @@ jobs:
 
     steps:
       - name: 📥 Mengambil Kode dari GitHub
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
-      - name: 🐘 Setup PHP 8.3
+      - name: 🐘 Setup PHP 8.2
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
-          extensions: mbstring, xml, ctype, iconv, intl, pdo_mysql, bcmath, curl, dom, fileinfo, zip, gd
+          php-version: '8.2'
+          extensions: mbstring, xml, ctype, iconv, intl, pdo_mysql, bcmath
 
       - name: 📦 Install Dependensi PHP (Composer)
-        run: composer install -q --no-ansi --no-interaction --no-progress --prefer-dist --optimize-autoloader --no-dev
+        run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist --optimize-autoloader --no-dev
 
-      - name: 🟢 Setup Node.js 20
-        uses: actions/setup-node@v4
+      - name: 🟢 Setup Node.js 18
+        uses: actions/setup-node@v3
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: '18'
 
       - name: 🛠️ Build Aset Frontend (Vite/Tailwind)
         run: |
           npm ci
           npm run build
 
-      - name: 🧹 Bersihkan File Tidak Perlu
-        run: rm -rf node_modules tests .github docs _cms-sja-excluded
+      - name: 🧹 Bersihkan File Tidak Perlu (Mempercepat Upload)
+        run: rm -rf node_modules
 
-      - name: 🔑 Install sshpass
-        run: sudo apt-get install -y sshpass
-
-      - name: 🚀 Deploy ke Server via Rsync (SSH)
-        run: |
-          sshpass -p "${{ secrets.SFTP_PASSWORD }}" rsync -avz \
-            -e "ssh -o StrictHostKeyChecking=no" \
-            --exclude='.git/' \
-            --exclude='node_modules/' \
-            --exclude='.env' \
-            --exclude='.env.example' \
-            --exclude='storage/logs/*' \
-            --exclude='storage/framework/cache/*' \
-            --exclude='storage/framework/sessions/*' \
-            --exclude='storage/framework/views/*' \
-            --exclude='storage/app/private/*' \
-            --exclude='storage/app/public/*' \
-            --exclude='bootstrap/cache/*' \
-            --exclude='tests/' \
-            --exclude='.github/' \
-            --exclude='docs/' \
-            --exclude='_cms-sja-excluded/' \
-            --exclude='phpunit.xml' \
-            --exclude='README.md' \
-            --exclude='CLAUDE.md' \
-            ./ ${{ secrets.SFTP_USERNAME }}@${{ secrets.SFTP_SERVER }}:~/cms-core/
-
-      - name: ⚙️ Post-Deploy (Artisan Commands di Server)
-        run: |
-          sshpass -p "${{ secrets.SFTP_PASSWORD }}" ssh -o StrictHostKeyChecking=no \
-            ${{ secrets.SFTP_USERNAME }}@${{ secrets.SFTP_SERVER }} << 'EOF'
-            cd ~/cms-core
-            php artisan config:cache
-            php artisan route:cache
-            php artisan view:cache
-            php artisan migrate --force
-            php artisan storage:link 2>/dev/null || true
-            echo "Deploy selesai!"
-          EOF
+      - name: 🚀 Upload File ke ZenHosta via SFTP
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          port: 22
+          local_path: './'
+          remote_path: '/home/sistemja/sistemja-cms/'
+          sftpArgs: '-o ConnectTimeout=15'
