@@ -55,21 +55,16 @@ jobs:
           . || true
 
     - name: 🚀 Upload to Server via SCP
-      uses: appleboy/scp-action@v0.1.7
-      with:
-        host: ${{ secrets.SSH_HOST }}
-        username: ${{ secrets.SSH_USERNAME }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        source: "/tmp/deploy.tar.gz"
-        target: "/home/sistemja/"
+      env:
+        SSHPASS: ${{ secrets.SSH_PASSWORD }}
+      run: |
+        sshpass -e scp -o StrictHostKeyChecking=no /tmp/deploy.tar.gz ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:/home/sistemja/
 
     - name: 💥 Extract and Deploy via SSH
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ secrets.SSH_HOST }}
-        username: ${{ secrets.SSH_USERNAME }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        script: |
+      env:
+        SSHPASS: ${{ secrets.SSH_PASSWORD }}
+      run: |
+        sshpass -e ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} << 'EOF'
           cd /home/sistemja/
           mkdir -p cms-core
           tar -xzf deploy.tar.gz -C cms-core/
@@ -81,3 +76,4 @@ jobs:
           php artisan migrate --force
           php artisan storage:link 2>/dev/null || true
           echo "Deploy selesai!"
+        EOF
