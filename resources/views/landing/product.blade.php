@@ -11,8 +11,8 @@
                 <div class="grid lg:grid-cols-12 md:grid-cols-10 grid-cols-3 items-center">
                     <div class="lg:col-span-2 md:col-span-2 col-span-1">
                         <a href="{{ route('second', ['dashboards', 'index']) }}">
-                            <img alt="logo dark" class="h-6 block dark:hidden" src="/images/logo-dark.png" />
-                            <img alt="" class="h-6 hidden dark:block" src="/images/logo-light.png" />
+                            <img alt="logo dark" class="h-6 block dark:hidden" src="/assets/logo.png" />
+                            <img alt="" class="h-6 hidden dark:block" src="/assets/logo.png" />
                         </a>
                     </div>
                     <div class="lg:col-span-8 md:col-span-6 md:block hidden">
@@ -68,8 +68,8 @@
         id="navbarMenu" role="dialog" tabindex="-1">
         <div class="flex items-center justify-between">
             <a href="#">
-                <img alt="logo dark" class="h-6 block dark:hidden" src="/images/logo-dark.png" />
-                <img alt="" class="h-6 hidden dark:block" src="/images/logo-light.png" />
+                <img alt="logo dark" class="h-6 block dark:hidden" src="/assets/logo.png" />
+                <img alt="" class="h-6 hidden dark:block" src="/assets/logo.png" />
             </a>
             <button aria-label="Close" class="inline-flex justify-end items-center gap-x-2 rounded-full"
                 data-hs-overlay="#navbarMenu">
@@ -413,7 +413,7 @@
                         steps.</p>
                 </div>
                 <div class="flex p-1 lg:w-96 md:w-112 w-86 rounded-md bg-default-200 relative mb-6 lg:mt-0 mt-4">
-                    <input class="px-3 text-sm border-0 ring-0 bg-transparent" placeholder="tailwick@themesdesign.in"
+                    <input class="px-3 text-sm border-0 ring-0 bg-transparent" placeholder="info@sistemjayaabadi.biz.id"
                         type="email" />
                     <button
                         class="absolute end-1 top-1.25 btn text-white bg-gradient-to-r from-primary to-purple-500 hover:from-purple-500 hover:to-primary border-0"
@@ -431,8 +431,8 @@
                 <div class="lg:col-span-4 col-span-12">
                     <div class="mb-5">
                         <a href="#">
-                            <img alt="logo dark" class="h-7 block dark:hidden" src="/images/logo-dark.png" />
-                            <img alt="" class="h-7 hidden dark:block" src="/images/logo-light.png" />
+                            <img alt="logo dark" class="h-7 block dark:hidden" src="/assets/logo.png" />
+                            <img alt="" class="h-7 hidden dark:block" src="/assets/logo.png" />
                         </a>
                     </div>
                     <p class="mb-5 text-sm text-default-500">

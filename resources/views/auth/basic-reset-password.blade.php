@@ -10,8 +10,8 @@
             <div class="text-center px-10 py-12">
                 <!-- Logo -->
                 <a class="flex justify-center" href="{{ route('second', ['dashboards', 'index']) }}">
-                    <img alt="logo dark" class="h-6 flex dark:hidden" src="/images/logo-dark.png"/>
-                    <img alt="" class="h-6 hidden dark:flex" src="/images/logo-light.png"/>
+                    <img alt="logo dark" class="h-6 flex dark:hidden" src="/assets/logo.png"/>
+                    <img alt="" class="h-6 hidden dark:flex" src="/assets/logo.png"/>
                 </a>
                 <div class="mt-8">
                     <h4 class="mb-2 text-primary text-xl font-semibold">Forgot Password?</h4>

@@ -152,8 +152,8 @@
                             <div class="flex items-center justify-between gap-3">
                                 <div>
                                     <a href="{{ route('second', ['dashboards', 'index']) }}">
-                                        <img alt="logo dark" class="h-6 block dark:hidden" src="/images/logo-dark.png"/>
-                                        <img alt="" class="h-6 hidden dark:block" src="/images/logo-light.png"/>
+                                        <img alt="logo dark" class="h-6 block dark:hidden" src="/assets/logo.png"/>
+                                        <img alt="" class="h-6 hidden dark:block" src="/assets/logo.png"/>
                                     </a>
                                 </div>
                                 <!-- Language Dropdown Button -->

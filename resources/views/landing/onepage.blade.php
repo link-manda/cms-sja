@@ -10,8 +10,8 @@
                 <div class="grid lg:grid-cols-12 md:grid-cols-10 grid-cols-2 items-center">
                     <div class="lg:col-span-2 md:col-span-2">
                         <a href="{{ route('second', ['dashboards', 'index']) }}">
-                            <img alt="logo dark" class="h-6 block dark:hidden" src="/images/logo-dark.png" />
-                            <img alt="" class="h-6 hidden dark:block" src="/images/logo-light.png" />
+                            <img alt="logo dark" class="h-6 block dark:hidden" src="/assets/logo.png" />
+                            <img alt="" class="h-6 hidden dark:block" src="/assets/logo.png" />
                         </a>
                     </div>
                     <div class="lg:col-span-8 md:col-span-6 md:block hidden">
@@ -712,7 +712,7 @@
                 <div class="lg:col-span-3">
                     <div class="flex p-1 lg:w-96 md:w-90 w-86 rounded-md border border-white/14 bg-card/4 relative mb-6">
                         <input class="px-3 text-sm text-white border-none bg-transparent focus:outline-none focus:ring-0"
-                            placeholder="tailwick@themesdesign.in" type="email" />
+                            placeholder="info@sistemjayaabadi.biz.id" type="email" />
                         <button class="absolute right-2 btn text-white bg-primary hover:bg-primary/90" type="button">
                             Subscribe Now
                         </button>
@@ -826,8 +826,8 @@
         id="navbarMenu" role="dialog" tabindex="-1">
         <div class="flex items-center justify-between">
             <a href="#">
-                <img alt="logo dark" class="h-6 block dark:hidden" src="/images/logo-dark.png" />
-                <img alt="" class="h-6 hidden dark:block" src="/images/logo-light.png" />
+                <img alt="logo dark" class="h-6 block dark:hidden" src="/assets/logo.png" />
+                <img alt="" class="h-6 hidden dark:block" src="/assets/logo.png" />
             </a>
             <button aria-label="Close" class="inline-flex justify-end items-center gap-x-2 rounded-full"
                 data-hs-overlay="#navbarMenu">

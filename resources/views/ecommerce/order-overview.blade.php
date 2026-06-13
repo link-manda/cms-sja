@@ -58,7 +58,7 @@
                     <div>
                         <h6 class="mb-4 card-title">Customer Info</h6>
                         <h6 class="mb-1 text-default-800 font-semibold text-sm">Pauline Hylton</h6>
-                        <p class="mb-1 text-default-500 text-sm">pauline@tailwick.com</p>
+                        <p class="mb-1 text-default-500 text-sm">info@sistemjayaabadi.biz.id</p>
                         <p class="text-default-500 text-sm">+(78) 120 4843 4714</p>
                     </div>
                     <div class="btn bg-warning/20 text-info size-12 float-end">
