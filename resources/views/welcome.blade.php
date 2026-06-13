@@ -432,21 +432,6 @@
                         </div>
                     </a>
                 @endforeach
-            @else
-                <!-- Fallback if no dynamic projects -->
-                <div class="group relative overflow-hidden rounded-[2rem] shadow-glass h-[400px]">
-                    <img src="https://lh3.googleusercontent.com/aida/AP1WRLs_2ANc7vwLGAd3OpYZtQSGrMCSsUKU2BgLNAfydovm9mk4HG8SpVSqWT8lK-e3OR7pvB3Lue_ks3YvZ_klTwU6OeMoPe02aJC3Ol-yInX3EvSh98qI4cRvGN1KohMcFkdPgGT4LbLw07guoKYY6aBep8ZM8nfusT8v5niFjWdNb_RpDRMHuSPIOCUftUgni6mmE2lcxY_mDQsKrB1tMDyAMVGk8RBe42TLSqyC37Z_K94r6YP77bNznQ"
-                        class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
-                    <div
-                        class="absolute inset-0 bg-gradient-to-t from-primary/90 via-primary/40 to-transparent opacity-80">
-                    </div>
-                    <div class="absolute inset-0 p-8 flex flex-col justify-end text-white">
-                        <span
-                            class="inline-block px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-semibold tracking-wider uppercase mb-3 w-max border border-white/20">Commercial</span>
-                        <h3 class="text-2xl font-bold mb-2">Office Tower Aurora</h3>
-                        <p class="text-white/80 text-sm mb-4">Jakarta • Completed</p>
-                    </div>
-                </div>
             @endif
         </div>
 
