@@ -7,7 +7,7 @@ on:
 
 jobs:
   web-deploy:
-    name: 🎉 Deploy via rsync
+    name: 🎉 Deploy via SSH
     runs-on: ubuntu-latest
     steps:
     - name: 🚚 Get latest code
@@ -52,28 +52,51 @@ jobs:
         chmod 600 ~/.ssh/deploy_key
         ssh-keyscan -t rsa,ecdsa,ed25519 -H ${{ secrets.FTP_SERVER }} >> ~/.ssh/known_hosts 2>/dev/null || true
 
-    # Step 1: Deploy Laravel core ke /core-cms/ (exclude public, storage, tests)
-    - name: 📂 Deploy Laravel Core ke /core-cms/
+    # Step 1: Archive core files (exclude public, storage, tests, etc)
+    - name: 📦 Archive Laravel Core
       run: |
-        rsync -avz --delete \
-          -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+        tar czf /tmp/core.tar.gz \
           --exclude='.git*' \
-          --exclude='node_modules/' \
-          --exclude='public/' \
-          --exclude='tests/' \
-          --exclude='storage/' \
+          --exclude='node_modules' \
+          --exclude='public' \
+          --exclude='tests' \
+          --exclude='storage' \
           --exclude='.env' \
           --exclude='.env.example' \
           --exclude='phpunit.xml' \
           --exclude='.editorconfig' \
-          --exclude='.github/' \
-          ./ ${{ secrets.FTP_USERNAME }}@${{ secrets.FTP_SERVER }}:/home/sistemja/core-cms/
+          --exclude='.github' \
+          .
 
-    # Step 2: Deploy isi public/ ke /public_html/
-    - name: 📂 Deploy Public Assets ke /public_html/
+    # Step 2: Archive public files
+    - name: 📦 Archive Public Assets
       run: |
-        rsync -avz --delete \
-          -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
-          --exclude='.git*' \
-          --exclude='.env' \
-          ./public/ ${{ secrets.FTP_USERNAME }}@${{ secrets.FTP_SERVER }}:/home/sistemja/public_html/
+        tar czf /tmp/public.tar.gz -C public .
+
+    # Step 3: Upload + extract in one SSH connection
+    - name: 📤 Upload and Deploy
+      run: |
+        SSH_OPTS="-i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=5 -o ConnectTimeout=60"
+
+        # Upload both archives
+        scp $SSH_OPTS /tmp/core.tar.gz /tmp/public.tar.gz \
+          ${{ secrets.FTP_USERNAME }}@${{ secrets.FTP_SERVER }}:/tmp/
+
+        # Extract in single SSH connection
+        ssh $SSH_OPTS ${{ secrets.FTP_USERNAME }}@${{ secrets.FTP_SERVER }} bash << 'REMOTE'
+        set -e
+
+        # Deploy core-cms (preserve .env and storage/)
+        cd /home/sistemja/core-cms
+        find . -maxdepth 1 -not -name '.' -not -name 'storage' -not -name '.env' -exec rm -rf {} +
+        tar xzf /tmp/core.tar.gz
+        rm -f /tmp/core.tar.gz
+
+        # Deploy public_html
+        cd /home/sistemja/public_html
+        rm -rf *
+        tar xzf /tmp/public.tar.gz
+        rm -f /tmp/public.tar.gz
+
+        echo "Deploy completed successfully"
+        REMOTE
