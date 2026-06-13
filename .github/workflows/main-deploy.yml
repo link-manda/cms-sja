@@ -68,9 +68,31 @@ jobs:
           --exclude='./.github' \
           .
 
-    # Step 2: Archive public files
-    - name: 📦 Archive Public Assets
+    # Step 2: Generate custom index.php for production and archive public files
+    - name: 📦 Generate Production index.php and Archive Public Assets
       run: |
+        cat > public/index.php << 'PHP'
+        <?php
+
+        use Illuminate\Foundation\Application;
+        use Illuminate\Http\Request;
+
+        define('LARAVEL_START', microtime(true));
+
+        // Determine if the application is in maintenance mode...
+        if (file_exists($maintenance = __DIR__.'/../core-cms/storage/framework/maintenance.php')) {
+            require $maintenance;
+        }
+
+        // Register the Composer autoloader...
+        require __DIR__.'/../core-cms/vendor/autoload.php';
+
+        // Bootstrap Laravel and handle the request...
+        /** @var Application $app */
+        $app = require_once __DIR__.'/../core-cms/bootstrap/app.php';
+
+        $app->handleRequest(Request::capture());
+        PHP
         tar czf /tmp/public.tar.gz -C public .
 
     # Step 3: Upload + extract in one SSH connection
