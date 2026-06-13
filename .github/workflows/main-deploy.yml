@@ -7,7 +7,7 @@ on:
 
 jobs:
   web-deploy:
-    name: 🎉 Deploy via SFTP
+    name: 🎉 Deploy via rsync
     runs-on: ubuntu-latest
     steps:
     - name: 🚚 Get latest code
@@ -18,6 +18,13 @@ jobs:
       with:
         php-version: '8.3'
 
+    - name: 📦 Cache Composer dependencies
+      uses: actions/cache@v4
+      with:
+        path: vendor
+        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+        restore-keys: ${{ runner.os }}-composer-
+
     - name: 📦 Install Composer Dependencies
       run: composer install -q --no-ansi --no-interaction --no-progress --prefer-dist --optimize-autoloader --no-dev
 
@@ -26,33 +33,47 @@ jobs:
       with:
         node-version: '20'
 
+    - name: 🟢 Cache npm dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.npm
+        key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: ${{ runner.os }}-npm-
+
     - name: 🏗️ Build Frontend Assets (Tailwind/Vite)
       run: |
         npm install
         npm run build
 
-    # Step 1: Deploy Laravel core ke /core-cms/
+    - name: 🔧 Setup SSH
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+        chmod 600 ~/.ssh/deploy_key
+        ssh-keyscan -H ${{ secrets.FTP_SERVER }} >> ~/.ssh/known_hosts
+
+    # Step 1: Deploy Laravel core ke /core-cms/ (exclude public, storage, tests)
     - name: 📂 Deploy Laravel Core ke /core-cms/
-      uses: wlixcc/SFTP-Deploy-Action@v1.2.4
-      with:
-        server: ${{ secrets.FTP_SERVER }}
-        username: ${{ secrets.FTP_USERNAME }}
-        ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
-        port: 22
-        local_path: '.'
-        remote_path: '/home/sistemja/core-cms'
-        sftpArgs: '-o StrictHostKeyChecking=no'
-        delete_remote_files: false
+      run: |
+        rsync -avz --delete \
+          -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+          --exclude='.git*' \
+          --exclude='node_modules/' \
+          --exclude='public/' \
+          --exclude='tests/' \
+          --exclude='storage/' \
+          --exclude='.env' \
+          --exclude='.env.example' \
+          --exclude='phpunit.xml' \
+          --exclude='.editorconfig' \
+          --exclude='.github/' \
+          ./ ${{ secrets.FTP_USERNAME }}@${{ secrets.FTP_SERVER }}:/home/sistemja/core-cms/
 
     # Step 2: Deploy isi public/ ke /public_html/
     - name: 📂 Deploy Public Assets ke /public_html/
-      uses: wlixcc/SFTP-Deploy-Action@v1.2.4
-      with:
-        server: ${{ secrets.FTP_SERVER }}
-        username: ${{ secrets.FTP_USERNAME }}
-        ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
-        port: 22
-        local_path: './public/'
-        remote_path: '/home/sistemja/public_html/'
-        sftpArgs: '-o StrictHostKeyChecking=no'
-        delete_remote_files: false
+      run: |
+        rsync -avz --delete \
+          -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+          --exclude='.git*' \
+          --exclude='.env' \
+          ./public/ ${{ secrets.FTP_USERNAME }}@${{ secrets.FTP_SERVER }}:/home/sistemja/public_html/
