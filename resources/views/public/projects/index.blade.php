@@ -7,6 +7,7 @@
     <meta name="description"
         content="Explore the portfolio of PT Sistem Jaya Abadi. View our completed and ongoing construction projects across Indonesia.">
     <title>Our Projects - PT Sistem Jaya Abadi</title>
+    <link rel="icon" type="image/png" href="/assets/logo.png" />
 
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />

@@ -4,4 +4,4 @@
 <meta content="Sistem Informasi dan Manajemen Portofolio PT. Sistem Jaya Abadi." name="description" />
 <meta content="PT. Sistem Jaya Abadi" name="author" />
 <!-- App favicon -->
-<link href="/images/favicon.ico" rel="shortcut icon" />
+<link href="/assets/logo.png" rel="icon" type="image/png" />

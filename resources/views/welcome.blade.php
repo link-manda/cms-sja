@@ -7,6 +7,7 @@
     <meta name="description"
         content="{{ setting('site_description', 'Professional contractors for premium, on-time construction projects.') }}">
     <title>{{ setting('site_title', 'PT Sistem Jaya Abadi - Professional Contractor') }}</title>
+    <link rel="icon" type="image/png" href="/assets/logo.png" />
 
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
