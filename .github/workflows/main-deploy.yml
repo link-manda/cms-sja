@@ -50,7 +50,7 @@ jobs:
         mkdir -p ~/.ssh
         echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
         chmod 600 ~/.ssh/deploy_key
-        ssh-keyscan -H ${{ secrets.FTP_SERVER }} >> ~/.ssh/known_hosts
+        ssh-keyscan -t rsa,ecdsa,ed25519 -H ${{ secrets.FTP_SERVER }} >> ~/.ssh/known_hosts 2>/dev/null || true
 
     # Step 1: Deploy Laravel core ke /core-cms/ (exclude public, storage, tests)
     - name: 📂 Deploy Laravel Core ke /core-cms/
