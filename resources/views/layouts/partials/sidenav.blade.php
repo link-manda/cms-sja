@@ -5,15 +5,15 @@
         href="{{ route('dashboard') }}">
         <!-- Light Brand Logo -->
         <div class="logo-light flex items-center gap-3">
-            <img alt="SJA" class="logo-sm h-8 rounded-lg" src="/assets/logo.png" />
-            <img alt="Sistem Jaya Abadi" class="logo-lg h-9 rounded-lg" src="/assets/logo.png" />
-            <span class="logo-lg font-bold text-lg">Sistem Jaya Abadi</span>
+            <img alt="SJA" class="logo-sm h-8 w-8 object-contain rounded-lg" src="/assets/logo.png" />
+            <img alt="Sistem Jaya Abadi" class="logo-lg h-9 w-9 object-contain rounded-lg" src="/assets/logo.png" />
+            <span class="logo-lg font-bold text-lg whitespace-nowrap">Sistem Jaya Abadi</span>
         </div>
         <!-- Dark Brand Logo -->
         <div class="logo-dark flex items-center gap-3">
-            <img alt="SJA" class="logo-sm h-8 rounded-lg" src="/assets/logo.png" />
-            <img alt="Sistem Jaya Abadi" class="logo-lg h-9 rounded-lg" src="/assets/logo.png" />
-            <span class="logo-lg font-bold text-lg">Sistem Jaya Abadi</span>
+            <img alt="SJA" class="logo-sm h-8 w-8 object-contain rounded-lg" src="/assets/logo.png" />
+            <img alt="Sistem Jaya Abadi" class="logo-lg h-9 w-9 object-contain rounded-lg" src="/assets/logo.png" />
+            <span class="logo-lg font-bold text-lg whitespace-nowrap">Sistem Jaya Abadi</span>
         </div>
     </a>
     <!-- Sidenav Menu Toggle Button -->
