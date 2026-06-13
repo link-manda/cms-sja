@@ -4,14 +4,16 @@
     <a class="logo-box sticky top-0 flex min-h-topbar-height items-center justify-start px-6 backdrop-blur-xs"
         href="{{ route('dashboard') }}">
         <!-- Light Brand Logo -->
-        <div class="logo-light">
-            <img alt="Light logo" class="logo-lg h-6" src="/images/logo-light.png" />
-            <img alt="Small logo" class="logo-sm h-6" src="/images/logo-sm.png" />
+        <div class="logo-light flex items-center gap-3">
+            <img alt="SJA" class="logo-sm h-8 rounded-lg" src="/assets/logo.png" />
+            <img alt="Sistem Jaya Abadi" class="logo-lg h-9 rounded-lg" src="/assets/logo.png" />
+            <span class="logo-lg font-bold text-lg">Sistem Jaya Abadi</span>
         </div>
         <!-- Dark Brand Logo -->
-        <div class="logo-dark">
-            <img alt="Dark logo" class="logo-lg h-6" src="/images/logo-dark.png" />
-            <img alt="Small logo" class="logo-sm h-6" src="/images/logo-sm.png" />
+        <div class="logo-dark flex items-center gap-3">
+            <img alt="SJA" class="logo-sm h-8 rounded-lg" src="/assets/logo.png" />
+            <img alt="Sistem Jaya Abadi" class="logo-lg h-9 rounded-lg" src="/assets/logo.png" />
+            <span class="logo-lg font-bold text-lg">Sistem Jaya Abadi</span>
         </div>
     </a>
     <!-- Sidenav Menu Toggle Button -->
