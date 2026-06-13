@@ -56,16 +56,16 @@ jobs:
     - name: 📦 Archive Laravel Core
       run: |
         tar czf /tmp/core.tar.gz \
-          --exclude='.git*' \
-          --exclude='node_modules' \
-          --exclude='public' \
-          --exclude='tests' \
-          --exclude='storage' \
-          --exclude='.env' \
-          --exclude='.env.example' \
-          --exclude='phpunit.xml' \
-          --exclude='.editorconfig' \
-          --exclude='.github' \
+          --exclude='./.git*' \
+          --exclude='./node_modules' \
+          --exclude='./public' \
+          --exclude='./tests' \
+          --exclude='./storage' \
+          --exclude='./.env' \
+          --exclude='./.env.example' \
+          --exclude='./phpunit.xml' \
+          --exclude='./.editorconfig' \
+          --exclude='./.github' \
           .
 
     # Step 2: Archive public files
