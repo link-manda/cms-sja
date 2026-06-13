@@ -98,5 +98,10 @@ jobs:
         tar xzf /tmp/public.tar.gz
         rm -f /tmp/public.tar.gz
 
+        # Create symlink: core-cms/public/build -> public_html/build
+        # (Vite looks for manifest in core-cms/public/build/)
+        mkdir -p /home/sistemja/core-cms/public
+        ln -sfn /home/sistemja/public_html/build /home/sistemja/core-cms/public/build
+
         echo "Deploy completed successfully"
         REMOTE
