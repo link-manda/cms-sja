@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Setting;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
 class SettingController extends Controller
@@ -65,6 +66,12 @@ class SettingController extends Controller
                 );
             }
         }
+
+        Log::channel('audit')->info('Settings updated', [
+            'user_id' => auth()->id(),
+            'keys' => $data->keys(),
+            'ip' => request()->ip(),
+        ]);
 
         return redirect()->route('settings.index')
             ->with('success', 'Pengaturan berhasil diperbarui!');

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
 class CategoryController extends Controller
@@ -44,7 +45,14 @@ class CategoryController extends Controller
             'slug' => 'required|string|max:255|unique:categories,slug|regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
         ]);
 
-        Category::create($validated);
+        $category = Category::create($validated);
+
+        Log::channel('audit')->info('Category created', [
+            'user_id' => auth()->id(),
+            'category_id' => $category->id,
+            'name' => $category->name,
+            'ip' => request()->ip(),
+        ]);
 
         return redirect()->route('categories.index')
             ->with('success', 'Category created successfully!');
@@ -77,6 +85,13 @@ class CategoryController extends Controller
 
         $category->update($validated);
 
+        Log::channel('audit')->info('Category updated', [
+            'user_id' => auth()->id(),
+            'category_id' => $category->id,
+            'name' => $category->name,
+            'ip' => request()->ip(),
+        ]);
+
         return redirect()->route('categories.index')
             ->with('success', 'Category updated successfully!');
     }
@@ -96,6 +111,13 @@ class CategoryController extends Controller
         }
 
         $category->delete();
+
+        Log::channel('audit')->info('Category deleted', [
+            'user_id' => auth()->id(),
+            'category_id' => $category->id,
+            'name' => $category->name,
+            'ip' => request()->ip(),
+        ]);
 
         return redirect()->route('categories.index')
             ->with('success', 'Category deleted successfully!');

@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateProjectRequest;
 use App\Models\Project;
 use App\Services\ProjectService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
 class ProjectController extends Controller
@@ -52,7 +53,14 @@ class ProjectController extends Controller
      */
     public function store(StoreProjectRequest $request)
     {
-        $this->projectService->createProject($request->validated());
+        $project = $this->projectService->createProject($request->validated());
+
+        Log::channel('audit')->info('Project created', [
+            'user_id' => auth()->id(),
+            'project_id' => $project->id,
+            'title' => $project->title,
+            'ip' => request()->ip(),
+        ]);
 
         return redirect()->route('projects.index')
             ->with('success', 'Project created successfully!');
@@ -89,6 +97,13 @@ class ProjectController extends Controller
     {
         $this->projectService->updateProject($project, $request->validated());
 
+        Log::channel('audit')->info('Project updated', [
+            'user_id' => auth()->id(),
+            'project_id' => $project->id,
+            'title' => $project->title,
+            'ip' => request()->ip(),
+        ]);
+
         return redirect()->route('projects.index')
             ->with('success', 'Project updated successfully!');
     }
@@ -101,6 +116,13 @@ class ProjectController extends Controller
     public function destroy(Project $project)
     {
         $this->projectService->deleteProject($project);
+
+        Log::channel('audit')->info('Project soft-deleted', [
+            'user_id' => auth()->id(),
+            'project_id' => $project->id,
+            'title' => $project->title,
+            'ip' => request()->ip(),
+        ]);
 
         return redirect()->route('projects.index')
             ->with('success', 'Project moved to trash successfully!');
