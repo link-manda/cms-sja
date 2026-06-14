@@ -173,9 +173,7 @@ jobs:
         # Protect public_html from exposing sensitive files
         # (storage symlink is needed, but .env/.git/etc must be blocked)
         cat > /home/sistemja/public_html/.htaccess << 'HTEOF'
-        # Allow following symlinks (required for storage/ symlink to core-cms)
-        # Disable directory listing
-        Options +FollowSymLinks -Indexes
+        # NOTE: Options removed to allow server default symlink handling
 
         # Hide PHP version
         <IfModule mod_headers.c>
