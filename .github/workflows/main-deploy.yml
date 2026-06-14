@@ -131,42 +131,61 @@ jobs:
 
         # Block ALL web access to core-cms directory
         cat > /home/sistemja/core-cms/.htaccess << 'HTEOF'
-        <IfModule mod_rewrite.c>
-            RewriteEngine On
-            RewriteRule ^ - [F,L]
-        </IfModule>
-        <IfModule !mod_rewrite.c>
-            Order Allow,Deny
-            Deny from all
-        </IfModule>
-        Options -Indexes
-        <FilesMatch "\.(env|lock|xml|json|yml|yaml|log|sql)$">
-            Order Allow,Deny
-            Deny from all
-        </FilesMatch>
-        HTEOF
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^ - [F,L]
+</IfModule>
+<IfModule !mod_rewrite.c>
+    Order Allow,Deny
+    Deny from all
+</IfModule>
+Options -Indexes
+<FilesMatch "\.(env|lock|xml|json|yml|yaml|log|sql)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+HTEOF
 
         # Block core-cms access from parent directory
         cat > /home/sistemja/.htaccess << 'HTEOF'
-        <IfModule mod_rewrite.c>
-            RewriteEngine On
-            RewriteRule ^core-cms/ - [F,L]
-        </IfModule>
-        Options -Indexes
-        HTEOF
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^core-cms/ - [F,L]
+</IfModule>
+Options -Indexes
+HTEOF
 
-        # Block storage directory access
-        cat > /home/sistemja/core-cms/storage/.htaccess << 'HTEOF'
-        Order Allow,Deny
-        Deny from all
-        Options -Indexes
-        HTEOF
+        # Protect public_html from exposing sensitive files
+        # (storage symlink is needed, but .env/.git/etc must be blocked)
+        cat > /home/sistemja/public_html/.htaccess << 'HTEOF'
+# Disable directory listing
+Options -Indexes
+
+# Hide PHP version
+<IfModule mod_headers.c>
+    Header always unset X-Powered-By
+</IfModule>
+
+# Block access to sensitive files
+<FilesMatch "(\.env|\.git|composer\.(json|lock)|phpunit\.xml|\.htaccess)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Laravel routing
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [L]
+</IfModule>
+HTEOF
 
         # Block vendor directory access (extra layer)
         cat > /home/sistemja/core-cms/vendor/.htaccess << 'HTEOF'
-        Order Allow,Deny
-        Deny from all
-        HTEOF
+Order Allow,Deny
+Deny from all
+HTEOF
 
         # Set correct permissions
         chmod 750 /home/sistemja/core-cms
