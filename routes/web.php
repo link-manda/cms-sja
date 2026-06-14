@@ -20,22 +20,36 @@ Route::get('/case-study/{slug}', [PublicProjectController::class, 'show'])->name
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [RoutingController::class, 'index'])->name('dashboard');
-    
+
     // Project Archive Routes
     Route::get('manage/projects/archive', [ProjectController::class, 'archive'])->name('projects.archive');
-    Route::patch('manage/projects/{id}/restore', [ProjectController::class, 'restore'])->name('projects.restore');
-    Route::delete('manage/projects/{id}/force-delete', [ProjectController::class, 'forceDelete'])->name('projects.force-delete');
-    
-    Route::resource('manage/projects', ProjectController::class)->names('projects')->parameters(['projects' => 'project']);
-    Route::resource('categories', CategoryController::class);
+    Route::patch('manage/projects/{id}/restore', [ProjectController::class, 'restore'])
+        ->middleware('throttle:10,1')
+        ->name('projects.restore');
+    Route::delete('manage/projects/{id}/force-delete', [ProjectController::class, 'forceDelete'])
+        ->middleware('throttle:5,1')
+        ->name('projects.force-delete');
+
+    Route::resource('manage/projects', ProjectController::class)
+        ->names('projects')
+        ->parameters(['projects' => 'project'])
+        ->middleware(['throttle:30,1']);
+    Route::resource('categories', CategoryController::class)
+        ->middleware(['throttle:30,1']);
     Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
-    Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
+    Route::post('/settings', [SettingController::class, 'update'])
+        ->middleware('throttle:10,1')
+        ->name('settings.update');
 });
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::patch('/profile', [ProfileController::class, 'update'])
+        ->middleware('throttle:10,1')
+        ->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])
+        ->middleware('throttle:3,1')
+        ->name('profile.destroy');
 });
 
 require __DIR__.'/auth.php';
