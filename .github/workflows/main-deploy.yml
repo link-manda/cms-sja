@@ -142,10 +142,12 @@ jobs:
 
         # ===== SECURITY: Block web access to sensitive directories =====
 
-        # Block ALL web access to core-cms directory
+        # Block ALL web access to core-cms directory (except storage/app/public for symlinked images)
         cat > /home/sistemja/core-cms/.htaccess << 'HTEOF'
         <IfModule mod_rewrite.c>
             RewriteEngine On
+            # Allow access to storage/app/public (symlinked from public_html/storage)
+            RewriteRule ^storage/app/public/ - [L]
             RewriteRule ^ - [F,L]
         </IfModule>
         <IfModule !mod_rewrite.c>
