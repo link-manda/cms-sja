@@ -38,57 +38,52 @@
     @include('layouts.partials/customizer')
 
     <!-- Navigation Loading Overlay -->
-    <div id="nav-loader" class="fixed inset-0 z-[9998] flex items-center justify-center bg-white/80 dark:bg-zinc-950/80 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200">
-        <div class="flex flex-col items-center gap-3">
-            <div class="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-            <p class="text-sm font-medium text-default-600 dark:text-default-400">Memuat halaman...</p>
+    <div id="nav-loader" style="display:none; position:fixed; inset:0; z-index:9998; align-items:center; justify-content:center; background:rgba(255,255,255,0.85); backdrop-filter:blur(4px);">
+        <div style="display:flex; flex-direction:column; align-items:center; gap:12px;">
+            <div style="width:40px; height:40px; border:4px solid #141B23; border-top-color:transparent; border-radius:50%; animation:navSpin 0.8s linear infinite;"></div>
+            <p style="font-size:14px; font-weight:500; color:#525252;">Memuat halaman...</p>
         </div>
     </div>
+    <style>
+        @keyframes navSpin { to { transform: rotate(360deg); } }
+    </style>
 
     <script>
         (function() {
-            const loader = document.getElementById('nav-loader');
+            var loader = document.getElementById('nav-loader');
+            var hideTimer = null;
 
-            function showLoader() {
-                if (loader) {
-                    loader.classList.remove('opacity-0', 'pointer-events-none');
-                    loader.classList.add('opacity-100');
-                }
+            function showNavLoader() {
+                if (!loader) return;
+                loader.style.display = 'flex';
+                // Auto-hide after 8s as safety net
+                clearTimeout(hideTimer);
+                hideTimer = setTimeout(function() {
+                    loader.style.display = 'none';
+                }, 8000);
             }
 
-            document.addEventListener('DOMContentLoaded', function() {
-                // Attach to all internal links (not external or #)
-                document.querySelectorAll('a[href]').forEach(function(link) {
-                    const href = link.getAttribute('href');
+            document.addEventListener('click', function(e) {
+                // Find closest <a> from click target
+                var link = e.target.closest('a[href]');
+                if (!link) return;
 
-                    // Skip: external links, hash links, javascript, logout forms, modal triggers
-                    if (!href || href.startsWith('#') || href.startsWith('javascript') ||
-                        href.startsWith('http') || link.hasAttribute('data-hs-overlay') ||
-                        link.classList.contains('menu-link') === false && link.closest('.app-menu') === null && link.closest('.app-header') === null) {
-                        return;
-                    }
+                var href = link.getAttribute('href');
 
-                    link.addEventListener('click', function(e) {
-                        // Skip if modifier key pressed (new tab/window)
-                        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+                // Skip: no href, hash, javascript, external, modifier keys
+                if (!href || href === '#' || href.startsWith('javascript') || href.startsWith('http')) return;
+                if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
 
-                        showLoader();
-                    });
-                });
+                // Skip: modal triggers, dropdown toggles, tab buttons
+                if (link.hasAttribute('data-hs-overlay') || link.classList.contains('hs-dropdown-toggle')) return;
 
-                // Also trigger on form submissions (search, filter, etc.)
-                document.querySelectorAll('form[method="GET"], form[method="get"]').forEach(function(form) {
-                    form.addEventListener('submit', showLoader);
-                });
+                // Only trigger for sidebar menu and topbar navigation links
+                var inSidebar = link.closest('#app-menu');
+                var inTopbar = link.closest('.app-header');
+                if (!inSidebar && !inTopbar) return;
+
+                showNavLoader();
             });
-
-            // Safety: hide loader after 5 seconds in case page doesn't load
-            setTimeout(function() {
-                if (loader) {
-                    loader.classList.add('opacity-0', 'pointer-events-none');
-                    loader.classList.remove('opacity-100');
-                }
-            }, 5000);
         })();
     </script>
 </body>
