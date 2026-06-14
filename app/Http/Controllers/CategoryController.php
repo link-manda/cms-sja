@@ -41,7 +41,7 @@ class CategoryController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'slug' => 'required|string|max:255|unique:categories,slug',
+            'slug' => 'required|string|max:255|unique:categories,slug|regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
         ]);
 
         Category::create($validated);
@@ -72,7 +72,7 @@ class CategoryController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'slug' => 'required|string|max:255|unique:categories,slug,' . $category->id,
+            'slug' => 'required|string|max:255|unique:categories,slug,' . $category->id . '|regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
         ]);
 
         $category->update($validated);

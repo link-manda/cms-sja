@@ -30,7 +30,7 @@ class UpdateProjectRequest extends FormRequest
             'category_id' => 'required|exists:categories,id',
             'location' => 'required|string|max:255',
             'description' => 'required|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048|dimensions:max_width=4096,max_height=4096',
             'status' => 'required|in:Completed,Ongoing',
             'client' => 'nullable|string|max:255',
             'year' => 'nullable|string|max:255',

@@ -32,18 +32,38 @@ class SettingController extends Controller
      */
     public function update(Request $request): RedirectResponse
     {
+        // Whitelist of allowed setting keys to prevent arbitrary key injection
+        $allowedKeys = [
+            'site_title',
+            'site_description',
+            'contact_whatsapp',
+            'contact_email',
+            'company_address',
+            'social_instagram',
+            'social_linkedin',
+        ];
+
         // Validate that all inputs are strings or null to prevent array injection
         $validatedData = $request->validate([
-            '*' => 'nullable|string',
+            'site_title' => 'nullable|string|max:255',
+            'site_description' => 'nullable|string|max:500',
+            'contact_whatsapp' => 'nullable|string|max:50',
+            'contact_email' => 'nullable|email|max:255',
+            'company_address' => 'nullable|string|max:1000',
+            'social_instagram' => 'nullable|url|max:255',
+            'social_linkedin' => 'nullable|url|max:255',
         ]);
 
         $data = collect($validatedData)->except(['_token', '_method']);
 
+        // Only update whitelisted keys
         foreach ($data as $key => $value) {
-            Setting::updateOrCreate(
-                ['key' => $key],
-                ['value' => $value]
-            );
+            if (in_array($key, $allowedKeys)) {
+                Setting::updateOrCreate(
+                    ['key' => $key],
+                    ['value' => $value]
+                );
+            }
         }
 
         return redirect()->route('settings.index')

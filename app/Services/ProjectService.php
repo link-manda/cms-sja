@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Project;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 /**
  * Service Class untuk mengelola logika bisnis Model Project.
@@ -19,7 +20,7 @@ class ProjectService
     {
         // Kelola upload gambar jika ada
         if (isset($data['image']) && $data['image'] instanceof UploadedFile) {
-            $filename = time().'_'.uniqid().'.'.$data['image']->getClientOriginalExtension();
+            $filename = Str::random(40).'.'.$data['image']->getClientOriginalExtension();
             $data['image']->storeAs('projects', $filename, 'public');
             $data['image'] = $filename;
         }
@@ -40,7 +41,7 @@ class ProjectService
             }
 
             // Simpan gambar baru
-            $filename = time().'_'.uniqid().'.'.$data['image']->getClientOriginalExtension();
+            $filename = Str::random(40).'.'.$data['image']->getClientOriginalExtension();
             $data['image']->storeAs('projects', $filename, 'public');
             $data['image'] = $filename;
         } else {
