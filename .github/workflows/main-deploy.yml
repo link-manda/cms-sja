@@ -127,5 +127,52 @@ jobs:
         # Create symlink: public_html/storage -> core-cms/storage/app/public
         ln -sfn /home/sistemja/core-cms/storage/app/public /home/sistemja/public_html/storage
 
+        # ===== SECURITY: Block web access to sensitive directories =====
+
+        # Block ALL web access to core-cms directory
+        cat > /home/sistemja/core-cms/.htaccess << 'HTEOF'
+        <IfModule mod_rewrite.c>
+            RewriteEngine On
+            RewriteRule ^ - [F,L]
+        </IfModule>
+        <IfModule !mod_rewrite.c>
+            Order Allow,Deny
+            Deny from all
+        </IfModule>
+        Options -Indexes
+        <FilesMatch "\.(env|lock|xml|json|yml|yaml|log|sql)$">
+            Order Allow,Deny
+            Deny from all
+        </FilesMatch>
+        HTEOF
+
+        # Block core-cms access from parent directory
+        cat > /home/sistemja/.htaccess << 'HTEOF'
+        <IfModule mod_rewrite.c>
+            RewriteEngine On
+            RewriteRule ^core-cms/ - [F,L]
+        </IfModule>
+        Options -Indexes
+        HTEOF
+
+        # Block storage directory access
+        cat > /home/sistemja/core-cms/storage/.htaccess << 'HTEOF'
+        Order Allow,Deny
+        Deny from all
+        Options -Indexes
+        HTEOF
+
+        # Block vendor directory access (extra layer)
+        cat > /home/sistemja/core-cms/vendor/.htaccess << 'HTEOF'
+        Order Allow,Deny
+        Deny from all
+        HTEOF
+
+        # Set correct permissions
+        chmod 750 /home/sistemja/core-cms
+        chmod 640 /home/sistemja/core-cms/.env
+        chmod -R 775 /home/sistemja/core-cms/storage
+        chmod -R 775 /home/sistemja/core-cms/bootstrap/cache
+
         echo "Deploy completed successfully"
         REMOTE
