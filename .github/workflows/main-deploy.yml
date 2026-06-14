@@ -137,8 +137,9 @@ jobs:
         mkdir -p /home/sistemja/core-cms/public
         ln -sfn /home/sistemja/public_html/build /home/sistemja/core-cms/public/build
 
-        # Create symlink: public_html/storage -> core-cms/storage/app/public
-        ln -sfn /home/sistemja/core-cms/storage/app/public /home/sistemja/public_html/storage
+        # Deploy storage files (copy instead of symlink to avoid LiteSpeed symlink 403)
+        rm -rf /home/sistemja/public_html/storage
+        cp -r /home/sistemja/core-cms/storage/app/public /home/sistemja/public_html/storage
 
         # ===== SECURITY: Block web access to sensitive directories =====
 
