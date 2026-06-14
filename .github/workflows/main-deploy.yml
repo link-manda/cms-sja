@@ -114,8 +114,18 @@ jobs:
         tar xzf /tmp/core.tar.gz
         rm -f /tmp/core.tar.gz
 
-        # Remove old storage .htaccess (blocks symlink access to images)
-        rm -f /home/sistemja/core-cms/storage/.htaccess
+        # CRITICAL: Remove storage .htaccess (blocks symlink access to images)
+        if [ -f /home/sistemja/core-cms/storage/.htaccess ]; then
+            echo "Removing blocking .htaccess from storage directory..."
+            chmod 644 /home/sistemja/core-cms/storage/.htaccess 2>/dev/null || true
+            rm -vf /home/sistemja/core-cms/storage/.htaccess
+        fi
+
+        # Verify storage is accessible
+        echo "Checking storage directory structure:"
+        ls -la /home/sistemja/core-cms/storage/.htaccess 2>&1 || echo "✓ .htaccess removed"
+        echo "Storage projects directory:"
+        ls /home/sistemja/core-cms/storage/app/public/projects/ | head -3 || echo "No projects found"
 
         # Deploy public_html
         cd /home/sistemja/public_html
