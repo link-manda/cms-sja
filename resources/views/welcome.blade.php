@@ -160,11 +160,8 @@
                             class="text-sm font-medium text-primary hover:text-secondary transition flex items-center gap-2">
                             <span class="material-symbols-outlined text-lg">dashboard</span> Dashboard
                         </a>
-                    @else
-                        <a href="{{ route('login') }}"
-                            class="text-sm font-medium text-muted hover:text-primary transition">Login</a>
                     @endauth
-                    <a href="https://wa.me/{{ format_wa_number(setting('contact_whatsapp', '628123456789')) }}"
+                    <a href="https://wa.me/{{ format_wa_number(setting('contact_whatsapp', '628123456789')) }}?text=Hello%20PT%20Sistem%20Jaya%20Abadi,%20I%20would%20like%20to%20inquire%20about%20your%20services."
                         target="_blank"
                         class="bg-secondary text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-secondary-hover hover:shadow-glow transition-all active:scale-95 duration-150">
                         Project Consultation
@@ -183,7 +180,7 @@
                 <a href="#about" class="text-muted font-medium">About Us</a>
                 <a href="#services" class="text-muted font-medium">Services</a>
                 <a href="#projects" class="text-muted font-medium">Projects</a>
-                <a href="https://wa.me/{{ format_wa_number(setting('contact_whatsapp', '628123456789')) }}"
+                <a href="https://wa.me/{{ format_wa_number(setting('contact_whatsapp', '628123456789')) }}?text=Hello%20PT%20Sistem%20Jaya%20Abadi,%20I%20would%20like%20to%20inquire%20about%20your%20services."
                     class="bg-secondary text-white text-center py-3 rounded-xl font-semibold">
                     Let's Talk
                 </a>
@@ -203,7 +200,7 @@
                     with uncompromised quality and absolute precision.
                 </p>
                 <div class="flex flex-col sm:flex-row gap-4 mb-10">
-                    <a href="https://wa.me/{{ format_wa_number(setting('contact_whatsapp', '628123456789')) }}"
+                    <a href="https://wa.me/{{ format_wa_number(setting('contact_whatsapp', '628123456789')) }}?text=Hello%20PT%20Sistem%20Jaya%20Abadi,%20I%20would%20like%20to%20inquire%20about%20your%20services."
                         class="bg-secondary text-white px-8 py-4 rounded-xl font-semibold hover:bg-secondary-hover transition-all hover:shadow-glow active:scale-95 duration-150 text-center flex justify-center items-center gap-2">
                         Get Free Consultation <span class="material-symbols-outlined text-sm">arrow_forward</span>
                     </a>
@@ -458,11 +455,11 @@
                 discuss your vision and construction needs today.</p>
 
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="https://wa.me/{{ format_wa_number(setting('contact_whatsapp', '628123456789')) }}"
+                <a href="https://wa.me/{{ format_wa_number(setting('contact_whatsapp', '628123456789')) }}?text=Hello%20PT%20Sistem%20Jaya%20Abadi,%20I%20would%20like%20to%20inquire%20about%20your%20services."
                     class="bg-secondary text-white px-8 py-4 rounded-xl font-semibold hover:bg-secondary-hover transition-all hover:shadow-glow active:scale-95 duration-150">
                     Contact Us Now
                 </a>
-                <a href="#"
+                <a href="https://wa.me/{{ format_wa_number(setting('contact_whatsapp', '628123456789')) }}?text=Hello,%20I%20would%20like%20to%20get%20a%20quote%20for%20a%20project."
                     class="bg-white/10 text-white px-8 py-4 rounded-xl font-semibold border border-white/20 hover:bg-white hover:text-primary transition-all active:scale-95 duration-150">
                     Get a Quote
                 </a>
@@ -509,8 +506,6 @@
                                 class="text-sm text-muted hover:text-secondary transition-colors">Services</a></li>
                         <li><a href="{{ url('/') }}#projects"
                                 class="text-sm text-muted hover:text-secondary transition-colors">Projects</a></li>
-                        <li><a href="{{ route('login') }}"
-                                class="text-sm text-muted hover:text-secondary transition-colors">Admin Portal</a></li>
                     </ul>
                 </div>
 
@@ -538,7 +533,7 @@
                     <h4 class="text-lg font-bold text-primary mb-6">Connect With Us</h4>
                     <ul class="space-y-3 mb-6 flex flex-col items-center md:items-start">
                         <li>
-                            <a href="https://wa.me/{{ format_wa_number(setting('contact_whatsapp', '628123456789')) }}"
+                            <a href="https://wa.me/{{ format_wa_number(setting('contact_whatsapp', '628123456789')) }}?text=Hello%20PT%20Sistem%20Jaya%20Abadi,%20I%20would%20like%20to%20inquire%20about%20your%20services."
                                 class="flex items-center gap-2 text-sm text-muted hover:text-secondary transition-colors">
                                 <span class="material-symbols-outlined text-lg">call</span>
                                 {{ setting('contact_whatsapp', '+62 812-3456-7890') }}
@@ -552,15 +547,15 @@
                         </li>
                     </ul>
                     <div class="flex gap-4 justify-center md:justify-start">
-                        <a href="#"
+                        <a href="javascript:void(0)"
                             class="w-10 h-10 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-muted hover:bg-secondary hover:text-white hover:border-secondary transition-all">
                             <span class="text-xs font-bold">IG</span>
                         </a>
-                        <a href="#"
+                        <a href="javascript:void(0)"
                             class="w-10 h-10 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-muted hover:bg-secondary hover:text-white hover:border-secondary transition-all">
                             <span class="text-xs font-bold">FB</span>
                         </a>
-                        <a href="#"
+                        <a href="javascript:void(0)"
                             class="w-10 h-10 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-muted hover:bg-secondary hover:text-white hover:border-secondary transition-all">
                             <span class="text-xs font-bold">IN</span>
                         </a>
@@ -572,9 +567,9 @@
                 <p class="text-sm text-muted text-center md:text-left">© {{ date('Y') }} PT Sistem Jaya Abadi. All
                     rights reserved.</p>
                 <div class="flex gap-6">
-                    <a href="#" class="text-sm text-muted hover:text-primary transition-colors">Privacy
+                    <a href="javascript:void(0)" class="text-sm text-muted hover:text-primary transition-colors">Privacy
                         Policy</a>
-                    <a href="#" class="text-sm text-muted hover:text-primary transition-colors">Terms of
+                    <a href="javascript:void(0)" class="text-sm text-muted hover:text-primary transition-colors">Terms of
                         Service</a>
                 </div>
             </div>

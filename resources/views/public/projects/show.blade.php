@@ -113,10 +113,8 @@
                         <a href="{{ url('/dashboard') }}" class="text-sm font-medium text-primary hover:text-secondary transition flex items-center gap-2">
                             <span class="material-symbols-outlined text-lg">dashboard</span> Dashboard
                         </a>
-                    @else
-                        <a href="{{ route('login') }}" class="text-sm font-medium text-muted hover:text-primary transition">Login</a>
                     @endauth
-                    <a href="https://wa.me/{{ format_wa_number(setting('contact_whatsapp', '628123456789')) }}" target="_blank" class="bg-secondary text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-secondary-hover hover:shadow-glow transition-all active:scale-95 duration-150">
+                    <a href="https://wa.me/{{ format_wa_number(setting('contact_whatsapp', '628123456789')) }}?text=Hello%20PT%20Sistem%20Jaya%20Abadi,%20I%20would%20like%20to%20inquire%20about%20your%20services." target="_blank" class="bg-secondary text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-secondary-hover hover:shadow-glow transition-all active:scale-95 duration-150">
                         Project Consultation
                     </a>
                 </div>
@@ -131,7 +129,7 @@
                 <a href="{{ url('/') }}#about" class="text-muted font-medium">About Us</a>
                 <a href="{{ url('/') }}#services" class="text-muted font-medium">Services</a>
                 <a href="{{ route('public.projects.index') }}" class="text-primary font-medium">Projects</a>
-                <a href="https://wa.me/{{ format_wa_number(setting('contact_whatsapp', '628123456789')) }}" class="bg-secondary text-white text-center py-3 rounded-xl font-semibold">
+                <a href="https://wa.me/{{ format_wa_number(setting('contact_whatsapp', '628123456789')) }}?text=Hello%20PT%20Sistem%20Jaya%20Abadi,%20I%20would%20like%20to%20inquire%20about%20your%20services." class="bg-secondary text-white text-center py-3 rounded-xl font-semibold">
                     Let's Talk
                 </a>
             </div>
@@ -336,7 +334,6 @@
                         <li><a href="{{ url('/') }}#about" class="text-sm text-muted hover:text-secondary transition-colors">About Us</a></li>
                         <li><a href="{{ url('/') }}#services" class="text-sm text-muted hover:text-secondary transition-colors">Services</a></li>
                         <li><a href="{{ route('public.projects.index') }}" class="text-sm text-muted hover:text-secondary transition-colors">Projects</a></li>
-                        <li><a href="{{ route('login') }}" class="text-sm text-muted hover:text-secondary transition-colors">Admin Portal</a></li>
                     </ul>
                 </div>
 
@@ -356,7 +353,7 @@
                     <h4 class="text-lg font-bold text-primary mb-6">Connect With Us</h4>
                     <ul class="space-y-3 mb-6 flex flex-col items-center md:items-start">
                         <li>
-                            <a href="https://wa.me/{{ format_wa_number(setting('contact_whatsapp', '628123456789')) }}" class="flex items-center gap-2 text-sm text-muted hover:text-secondary transition-colors">
+                            <a href="https://wa.me/{{ format_wa_number(setting('contact_whatsapp', '628123456789')) }}?text=Hello%20PT%20Sistem%20Jaya%20Abadi,%20I%20would%20like%20to%20inquire%20about%20your%20services." class="flex items-center gap-2 text-sm text-muted hover:text-secondary transition-colors">
                                 <span class="material-symbols-outlined text-lg">call</span> {{ setting('contact_whatsapp', '+62 812-3456-7890') }}
                             </a>
                         </li>
@@ -366,15 +363,15 @@
                             </a>
                         </li>
                     </ul>
-                    <div class="flex gap-4 justify-center md:justify-start">
-                        <a href="#" class="w-10 h-10 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-muted hover:bg-secondary hover:text-white hover:border-secondary transition-all">
-                            <span class="text-xs font-bold">IG</span>
+                    <div class="flex gap-4">
+                        <a href="javascript:void(0)" class="w-10 h-10 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-muted hover:bg-secondary hover:text-white hover:border-secondary transition-all">
+                            <span class="text-sm font-bold">IN</span>
                         </a>
-                        <a href="#" class="w-10 h-10 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-muted hover:bg-secondary hover:text-white hover:border-secondary transition-all">
-                            <span class="text-xs font-bold">FB</span>
+                        <a href="javascript:void(0)" class="w-10 h-10 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-muted hover:bg-secondary hover:text-white hover:border-secondary transition-all">
+                            <span class="text-sm font-bold">FB</span>
                         </a>
-                        <a href="#" class="w-10 h-10 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-muted hover:bg-secondary hover:text-white hover:border-secondary transition-all">
-                            <span class="text-xs font-bold">IN</span>
+                        <a href="javascript:void(0)" class="w-10 h-10 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-muted hover:bg-secondary hover:text-white hover:border-secondary transition-all">
+                            <span class="text-sm font-bold">IG</span>
                         </a>
                     </div>
                 </div>
@@ -382,9 +379,9 @@
 
             <div class="pt-8 border-t border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
                 <p class="text-sm text-muted text-center md:text-left">© {{ date('Y') }} PT Sistem Jaya Abadi. All rights reserved.</p>
-                <div class="flex gap-6">
-                    <a href="#" class="text-sm text-muted hover:text-primary transition-colors">Privacy Policy</a>
-                    <a href="#" class="text-sm text-muted hover:text-primary transition-colors">Terms of Service</a>
+                <div class="flex gap-6 mt-4 md:mt-0">
+                    <a href="javascript:void(0)" class="text-sm text-muted hover:text-primary transition-colors">Privacy Policy</a>
+                    <a href="javascript:void(0)" class="text-sm text-muted hover:text-primary transition-colors">Terms of Service</a>
                 </div>
             </div>
         </div>
