@@ -144,13 +144,13 @@
                 </a>
 
                 <nav class="hidden md:flex space-x-8 items-center">
-                    <a class="text-sm font-semibold text-primary border-b-2 border-secondary pb-1"
+                    <a class="nav-link-desktop text-sm font-semibold text-primary border-b-2 border-secondary pb-1"
                         href="#home">Home</a>
-                    <a class="text-sm font-medium text-muted hover:text-primary transition-colors pb-1"
+                    <a class="nav-link-desktop text-sm font-medium text-muted hover:text-primary transition-colors border-b-2 border-transparent pb-1"
                         href="#about">About Us</a>
-                    <a class="text-sm font-medium text-muted hover:text-primary transition-colors pb-1"
+                    <a class="nav-link-desktop text-sm font-medium text-muted hover:text-primary transition-colors border-b-2 border-transparent pb-1"
                         href="#services">Services</a>
-                    <a class="text-sm font-medium text-muted hover:text-primary transition-colors pb-1"
+                    <a class="nav-link-desktop text-sm font-medium text-muted hover:text-primary transition-colors border-b-2 border-transparent pb-1"
                         href="#projects">Projects</a>
                 </nav>
 
@@ -176,10 +176,10 @@
 
             <!-- Mobile Menu -->
             <div id="mobile-menu" class="hidden md:hidden glass-panel mt-2 rounded-2xl p-4 flex flex-col space-y-4">
-                <a href="#home" class="text-primary font-medium">Home</a>
-                <a href="#about" class="text-muted font-medium">About Us</a>
-                <a href="#services" class="text-muted font-medium">Services</a>
-                <a href="#projects" class="text-muted font-medium">Projects</a>
+                <a href="#home" class="nav-link-mobile text-primary font-bold">Home</a>
+                <a href="#about" class="nav-link-mobile text-muted font-medium hover:text-primary transition-colors">About Us</a>
+                <a href="#services" class="nav-link-mobile text-muted font-medium hover:text-primary transition-colors">Services</a>
+                <a href="#projects" class="nav-link-mobile text-muted font-medium hover:text-primary transition-colors">Projects</a>
                 <a href="https://wa.me/{{ format_wa_number(setting('contact_whatsapp', '628123456789')) }}?text=Hello%20PT%20Sistem%20Jaya%20Abadi,%20I%20would%20like%20to%20inquire%20about%20your%20services."
                     class="bg-secondary text-white text-center py-3 rounded-xl font-semibold">
                     Let's Talk
@@ -603,6 +603,51 @@
                     nav.classList.remove('py-2');
                     nav.classList.add('mt-4');
                 }
+            });
+
+            // Active Navbar Link based on Scroll Section
+            const sections = document.querySelectorAll('section[id]');
+            const desktopLinks = document.querySelectorAll('.nav-link-desktop');
+            const mobileLinks = document.querySelectorAll('.nav-link-mobile');
+
+            const navObserverOptions = {
+                root: null,
+                rootMargin: '-50px 0px -50% 0px', // Trigger when section is in the top half of viewport
+                threshold: 0
+            };
+
+            const navObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const id = entry.target.getAttribute('id');
+                        
+                        // Update Desktop Links
+                        desktopLinks.forEach(link => {
+                            if (link.getAttribute('href') === `#${id}`) {
+                                link.classList.add('font-semibold', 'text-primary', 'border-secondary');
+                                link.classList.remove('font-medium', 'text-muted', 'border-transparent');
+                            } else {
+                                link.classList.remove('font-semibold', 'text-primary', 'border-secondary');
+                                link.classList.add('font-medium', 'text-muted', 'border-transparent');
+                            }
+                        });
+
+                        // Update Mobile Links
+                        mobileLinks.forEach(link => {
+                            if (link.getAttribute('href') === `#${id}`) {
+                                link.classList.add('font-bold', 'text-primary');
+                                link.classList.remove('font-medium', 'text-muted');
+                            } else {
+                                link.classList.remove('font-bold', 'text-primary');
+                                link.classList.add('font-medium', 'text-muted');
+                            }
+                        });
+                    }
+                });
+            }, navObserverOptions);
+
+            sections.forEach(section => {
+                navObserver.observe(section);
             });
         });
     </script>
