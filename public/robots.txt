@@ -1,6 +1,13 @@
 User-agent: *
 Disallow: /admin/
 Disallow: /manage/
+Disallow: /dashboard
+Disallow: /categories
+Disallow: /settings
+Disallow: /profile
 Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password
 
 Sitemap: https://www.sistemjayaabadi.biz.id/sitemap.xml
