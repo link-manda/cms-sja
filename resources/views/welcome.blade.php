@@ -4,10 +4,22 @@
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <meta name="description"
-        content="{{ setting('site_description', 'Professional contractors for premium, on-time construction projects.') }}">
     <title>{{ setting('site_title', 'PT Sistem Jaya Abadi - Professional Contractor') }}</title>
+    @include('partials.public-seo')
     <link rel="icon" type="image/png" href="/assets/logo.png" />
+    @php
+        $organizationSchema = [
+            '@context' => 'https://schema.org',
+            '@type' => 'Organization',
+            'name' => 'PT Sistem Jaya Abadi',
+            'url' => url('/'),
+            'logo' => asset('assets/logo.png'),
+            'description' => setting('site_description', 'Professional contractors for premium, on-time construction projects.'),
+            'email' => setting('contact_email', ''),
+            'address' => setting('company_address', ''),
+        ];
+    @endphp
+    <script type="application/ld+json">{!! \Illuminate\Support\Js::from($organizationSchema) !!}</script>
 
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />

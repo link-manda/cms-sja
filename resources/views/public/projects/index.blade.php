@@ -4,9 +4,12 @@
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <meta name="description"
-        content="Explore the portfolio of PT Sistem Jaya Abadi. View our completed and ongoing construction projects across Indonesia.">
     <title>Our Projects - PT Sistem Jaya Abadi</title>
+    @include('partials.public-seo', [
+        'title' => 'Our Projects - PT Sistem Jaya Abadi',
+        'description' => 'Explore the portfolio of PT Sistem Jaya Abadi. View our completed and ongoing construction projects across Indonesia.',
+        'url' => route('public.projects.index'),
+    ])
     <link rel="icon" type="image/png" href="/assets/logo.png" />
 
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>

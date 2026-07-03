@@ -1,10 +1,25 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
 <head>
+    @php
+        $seoTitle = $project->meta_title ?? $project->title . ' - Case Study | PT Sistem Jaya Abadi';
+        $seoDescription = $project->meta_description ?? Str::limit($project->description, 150);
+        $seoImage = str_starts_with($project->image, 'http')
+            ? $project->image
+            : (file_exists(public_path('assets/' . $project->image))
+                ? asset('assets/' . $project->image)
+                : asset('storage/projects/' . $project->image));
+    @endphp
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <meta name="description" content="{{ $project->meta_description ?? Str::limit($project->description, 150) }}">
-    <title>{{ $project->meta_title ?? $project->title . ' - Case Study | PT Sistem Jaya Abadi' }}</title>
+    <title>{{ $seoTitle }}</title>
+    @include('partials.public-seo', [
+        'title' => $seoTitle,
+        'description' => $seoDescription,
+        'url' => route('public.projects.show', $project->slug),
+        'image' => $seoImage,
+        'type' => 'article',
+    ])
     <link rel="icon" type="image/png" href="/assets/logo.png" />
     
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
