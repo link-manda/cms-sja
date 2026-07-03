@@ -116,7 +116,7 @@ class CategoryCrudTest extends TestCase
         $response = $this->actingAs($this->user)->delete(route('categories.destroy', $category->id));
 
         $response->assertRedirect(route('categories.index'));
-        $response->assertSessionHas('error', 'Cannot delete category because it has projects assigned to it!');
+        $response->assertSessionHas('error', 'Cannot delete category! It has projects (either active or in the archive) assigned to it.');
         $this->assertDatabaseHas('categories', ['id' => $category->id]);
     }
 }

@@ -191,7 +191,7 @@ class ProjectCrudTest extends TestCase
         $response = $this->actingAs($this->user)->delete(route('projects.destroy', $project->id));
 
         $response->assertRedirect(route('projects.index'));
-        $this->assertDatabaseMissing('projects', ['id' => $project->id]);
-        Storage::disk('public')->assertMissing('projects/temp.jpg');
+        $this->assertSoftDeleted('projects', ['id' => $project->id]);
+        Storage::disk('public')->assertExists('projects/temp.jpg');
     }
 }
