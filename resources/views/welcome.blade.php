@@ -552,9 +552,9 @@
                             </a>
                         </li>
                         <li>
-                            <a href="mailto:info@sistemjayaabadi.com"
+                            <a href="mailto:info@sistemjayaabadi.biz.id"
                                 class="flex items-center gap-2 text-sm text-muted hover:text-secondary transition-colors">
-                                <span class="material-symbols-outlined text-lg">mail</span> info@sistemjayaabadi.com
+                                <span class="material-symbols-outlined text-lg">mail</span> info@sistemjayaabadi.biz.id
                             </a>
                         </li>
                     </ul>

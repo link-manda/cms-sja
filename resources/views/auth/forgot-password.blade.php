@@ -50,7 +50,7 @@
                     <div>
                         <label class="block font-sans font-semibold text-[#141B23] text-xs uppercase tracking-widest mb-2" for="email">Email Address</label>
                         <input class="w-full bg-white border {{ $errors->has('email') ? 'border-[#DB5916] focus:border-[#DB5916] focus:ring-[#DB5916]' : 'border-[#7C7C89]/40 focus:border-[#327447] focus:ring-[#327447]' }} text-[#141B23] rounded-lg px-4 py-3 font-sans focus:outline-none focus:ring-1 transition-all duration-300 placeholder-[#7C7C89]/50" 
-                               id="email" name="email" value="{{ old('email') }}" placeholder="admin@sistemjayaabadi.com" type="email" required autofocus />
+                               id="email" name="email" value="{{ old('email') }}" placeholder="admin@sistemjayaabadi.biz.id" type="email" required autofocus />
                     </div>
 
                     <!-- Submit Button -->
