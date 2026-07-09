@@ -190,7 +190,7 @@
         <div class="mb-16 animate-reveal-up" style="animation-delay: 200ms;" id="project-carousel" data-images="{{ json_encode($allImages) }}">
             <!-- Main Display -->
             <div class="relative rounded-[2rem] overflow-hidden shadow-2xl border border-white/50 w-full aspect-video md:aspect-[21/9] bg-primary group">
-                <img id="main-carousel-img" src="{{ $allImages[0] }}" alt="{{ $project->title }}" class="w-full h-full object-cover transition-opacity duration-300 cursor-pointer" onclick="openLightbox(this.src)" decoding="async">
+                <img id="main-carousel-img" src="{{ $allImages[0] }}" alt="{{ $project->title }}" class="w-full h-full object-cover transition-all duration-300 cursor-pointer" onclick="openLightbox(this.src)" decoding="async">
                 
                 @if ($project->status === 'Completed')
                     <div class="absolute top-6 right-6 glass-panel px-5 py-2 rounded-full text-sm font-semibold text-success tracking-wider uppercase border border-success/20 z-10 pointer-events-none">
@@ -452,35 +452,47 @@
     <script>
         // Carousel Slider Functions
         let currentImageIndex = 0;
+        let isTransitioning = false;
         const carouselEl = document.getElementById('project-carousel');
         let galleryImages = [];
-        if(carouselEl) {
+        if (carouselEl) {
             galleryImages = JSON.parse(carouselEl.getAttribute('data-images') || '[]');
         }
 
         function setImage(index) {
-            if(galleryImages.length === 0) return;
-            currentImageIndex = index;
+            if (galleryImages.length === 0 || isTransitioning || index === currentImageIndex) return;
+
             const mainImg = document.getElementById('main-carousel-img');
-            
-            // Fade out
-            mainImg.style.opacity = '0.4';
-            mainImg.style.transform = 'scale(0.98)';
-            
-            setTimeout(() => {
-                mainImg.src = galleryImages[currentImageIndex];
-                // Fade in
-                mainImg.style.opacity = '1';
-                mainImg.style.transform = 'scale(1)';
-            }, 200);
-            
-            // Update Thumbnails Styles
+            const nextImage = new Image();
+            isTransitioning = true;
+
+            nextImage.onload = () => {
+                currentImageIndex = index;
+                mainImg.style.opacity = '0.35';
+                mainImg.style.transform = 'scale(0.985)';
+
+                setTimeout(() => {
+                    mainImg.src = nextImage.src;
+                    mainImg.style.opacity = '1';
+                    mainImg.style.transform = 'scale(1)';
+                    updateThumbnails();
+                    isTransitioning = false;
+                }, 180);
+            };
+
+            nextImage.onerror = () => {
+                isTransitioning = false;
+            };
+
+            nextImage.src = galleryImages[index];
+        }
+
+        function updateThumbnails() {
             document.querySelectorAll('.carousel-thumb').forEach((thumb, i) => {
-                if(i === currentImageIndex) {
+                if (i === currentImageIndex) {
                     thumb.classList.remove('border-transparent', 'opacity-50', 'scale-95');
                     thumb.classList.add('border-secondary', 'opacity-100', 'scale-100', 'shadow-md');
-                    
-                    // Center the active thumbnail in the scroll view
+
                     const container = thumb.parentElement;
                     const scrollLeft = thumb.offsetLeft - (container.clientWidth / 2) + (thumb.clientWidth / 2);
                     container.scrollTo({ left: scrollLeft, behavior: 'smooth' });
