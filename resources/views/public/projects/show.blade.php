@@ -190,7 +190,7 @@
         <div class="mb-16 animate-reveal-up" style="animation-delay: 200ms;" id="project-carousel" data-images="{{ json_encode($allImages) }}">
             <!-- Main Display -->
             <div class="relative rounded-[2rem] overflow-hidden shadow-2xl border border-white/50 w-full aspect-video md:aspect-[21/9] bg-primary group">
-                <img id="main-carousel-img" src="{{ $allImages[0] }}" alt="{{ $project->title }}" class="w-full h-full object-cover transition-opacity duration-300 cursor-pointer" onclick="openLightbox(this.src)">
+                <img id="main-carousel-img" src="{{ $allImages[0] }}" alt="{{ $project->title }}" class="w-full h-full object-cover transition-opacity duration-300 cursor-pointer" onclick="openLightbox(this.src)" decoding="async">
                 
                 @if ($project->status === 'Completed')
                     <div class="absolute top-6 right-6 glass-panel px-5 py-2 rounded-full text-sm font-semibold text-success tracking-wider uppercase border border-success/20 z-10 pointer-events-none">
@@ -218,7 +218,7 @@
             <div class="flex gap-4 overflow-x-auto py-4 no-scrollbar mt-4 snap-x">
                 @foreach($allImages as $index => $img)
                     <button onclick="setImage({{ $index }})" id="thumb-{{ $index }}" class="carousel-thumb snap-start relative flex-shrink-0 w-28 h-20 md:w-40 md:h-28 rounded-xl overflow-hidden border-2 {{ $index === 0 ? 'border-secondary opacity-100 scale-100 shadow-md' : 'border-transparent opacity-50 hover:opacity-100 scale-95 hover:scale-100' }} transition-all duration-300">
-                        <img src="{{ $img }}" class="w-full h-full object-cover">
+                        <img src="{{ $img }}" class="w-full h-full object-cover" alt="{{ $project->title }} gallery image {{ $index + 1 }}" loading="lazy" decoding="async">
                     </button>
                 @endforeach
             </div>

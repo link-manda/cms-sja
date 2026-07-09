@@ -4,8 +4,11 @@ namespace App\Services;
 
 use App\Models\Project;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use RuntimeException;
+use Throwable;
 
 /**
  * Service Class untuk mengelola logika bisnis Model Project.
@@ -18,30 +21,21 @@ class ProjectService
      */
     public function createProject(array $data): Project
     {
-        // Kelola upload gambar jika ada
         if (isset($data['image']) && $data['image'] instanceof UploadedFile) {
             $filename = Str::random(40).'.'.$data['image']->getClientOriginalExtension();
             $data['image']->storeAs('projects', $filename, 'public');
             $data['image'] = $filename;
         }
-        // Tangkap gallery_images sebelum dikirim ke ::create
+
         $galleryImages = $data['gallery_images'] ?? [];
         unset($data['gallery_images']);
 
-        $project = Project::create($data);
+        return DB::transaction(function () use ($data, $galleryImages) {
+            $project = Project::create($data);
+            $this->storeGalleryImages($project, $galleryImages);
 
-        // Kelola upload gambar galeri jika ada
-        if (!empty($galleryImages)) {
-            foreach ($galleryImages as $image) {
-                if ($image instanceof UploadedFile) {
-                    $filename = Str::random(40).'.'.$image->getClientOriginalExtension();
-                    $image->storeAs('projects/gallery', $filename, 'public');
-                    $project->images()->create(['image_path' => 'projects/gallery/' . $filename]);
-                }
-            }
-        }
-
-        return $project;
+            return $project;
+        });
     }
 
     /**
@@ -49,39 +43,66 @@ class ProjectService
      */
     public function updateProject(Project $project, array $data): bool
     {
-        // Kelola upload gambar baru
         if (isset($data['image']) && $data['image'] instanceof UploadedFile) {
-            // Hapus gambar lama jika ada
             if ($project->image) {
                 Storage::disk('public')->delete('projects/'.$project->image);
             }
 
-            // Simpan gambar baru
             $filename = Str::random(40).'.'.$data['image']->getClientOriginalExtension();
             $data['image']->storeAs('projects', $filename, 'public');
             $data['image'] = $filename;
         } else {
-            // Pertahankan gambar lama jika tidak di-upload gambar baru
             unset($data['image']);
         }
-        // Tangkap gallery_images jika ada upload baru
+
         $galleryImages = $data['gallery_images'] ?? [];
         unset($data['gallery_images']);
 
-        $updated = $project->update($data);
+        return DB::transaction(function () use ($project, $data, $galleryImages) {
+            $updated = $project->update($data);
+            $this->storeGalleryImages($project, $galleryImages);
 
-        // Kelola upload gambar galeri baru
-        if (!empty($galleryImages)) {
-            foreach ($galleryImages as $image) {
-                if ($image instanceof UploadedFile) {
-                    $filename = Str::random(40).'.'.$image->getClientOriginalExtension();
-                    $image->storeAs('projects/gallery', $filename, 'public');
-                    $project->images()->create(['image_path' => 'projects/gallery/' . $filename]);
+            return $updated;
+        });
+    }
+
+    private function storeGalleryImages(Project $project, array $images): void
+    {
+        $storedPaths = [];
+
+        try {
+            foreach ($images as $image) {
+                if (! $image instanceof UploadedFile) {
+                    continue;
                 }
+
+                $filename = Str::random(40).'.'.$image->getClientOriginalExtension();
+                $path = 'projects/gallery/'.$filename;
+
+                if (! $image->storeAs('projects/gallery', $filename, 'public')) {
+                    throw new RuntimeException('Failed to store gallery image.');
+                }
+
+                $storedPaths[] = $path;
+
+                $project->images()->create(['image_path' => $path]);
             }
+        } catch (Throwable $exception) {
+            Storage::disk('public')->delete($storedPaths);
+
+            throw $exception;
+        }
+    }
+
+    public function deleteGalleryImage(Project $project, int $imageId): bool
+    {
+        $image = $project->images()->findOrFail($imageId);
+
+        if (Storage::disk('public')->exists($image->image_path) && ! Storage::disk('public')->delete($image->image_path)) {
+            return false;
         }
 
-        return $updated;
+        return (bool) $image->delete();
     }
 
     /**
@@ -107,7 +128,7 @@ class ProjectService
         foreach ($project->images as $galleryImage) {
             Storage::disk('public')->delete($galleryImage->image_path);
         }
-        
+
         // Hapus record gallery (jika cascade on delete belum diset di database)
         $project->images()->delete();
 

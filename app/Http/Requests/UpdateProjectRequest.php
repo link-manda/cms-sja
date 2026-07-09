@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class UpdateProjectRequest extends FormRequest
 {
@@ -42,5 +43,21 @@ class UpdateProjectRequest extends FormRequest
             'gallery_images' => 'nullable|array|max:10',
             'gallery_images.*' => 'image|mimes:jpeg,png,jpg,webp|max:4096|dimensions:max_width=4096,max_height=4096',
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            $project = $this->route('project');
+            $uploadedImages = $this->file('gallery_images', []);
+
+            if (! is_object($project) || empty($uploadedImages)) {
+                return;
+            }
+
+            if ($project->images()->count() + count($uploadedImages) > 10) {
+                $validator->errors()->add('gallery_images', 'Gallery may not contain more than 10 photos.');
+            }
+        });
     }
 }

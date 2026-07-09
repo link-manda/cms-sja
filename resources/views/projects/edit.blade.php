@@ -210,7 +210,7 @@
                         <button type="button" 
                                 class="dynamic-action-btn absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-danger/90 hover:bg-danger text-white p-1.5 rounded-full flex items-center justify-center shadow-lg transform hover:scale-110 transition-transform"
                                 data-hs-overlay="#dynamic-action-modal"
-                                data-action-url="{{ route('projects.gallery.delete', $image->id) }}"
+                                data-action-url="{{ route('projects.gallery.delete', [$project, $image->id]) }}"
                                 data-action-type="delete-gallery">
                             <i class="size-4" data-lucide="x"></i>
                         </button>

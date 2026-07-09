@@ -9,9 +9,14 @@
     <div class="card">
         <div class="card-header flex justify-between items-center">
             <h6 class="card-title text-base font-semibold text-default-800">Project Details: {{ $project->title }}</h6>
-            <a href="{{ route('projects.index') }}" class="btn btn-sm border border-default-300 text-default-700 hover:bg-default-150 cursor-pointer">
-                 Back
-             </a>
+            <div class="flex items-center gap-2">
+                <a href="{{ route('projects.edit', $project) }}" class="btn btn-sm bg-primary text-white cursor-pointer">
+                    Edit Project
+                </a>
+                <a href="{{ route('projects.index') }}" class="btn btn-sm border border-default-300 text-default-700 hover:bg-default-150 cursor-pointer">
+                    Back
+                </a>
+            </div>
          </div>
          <div class="card-body">
              <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -116,6 +121,33 @@
              </div>
          </div>
      </div>
+
+    <div class="card mt-6">
+        <div class="card-header flex justify-between items-center">
+            <div>
+                <h6 class="card-title text-base font-semibold text-default-800">Project Gallery</h6>
+                <p class="text-sm text-default-500 mt-1">Read-only preview of photos shown on the public case study page.</p>
+            </div>
+            <a href="{{ route('projects.edit', $project) }}" class="btn btn-sm border border-default-300 text-default-700 hover:bg-default-150 cursor-pointer">
+                Manage Gallery
+            </a>
+        </div>
+        <div class="card-body">
+            @if ($project->images->isNotEmpty())
+                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    @foreach ($project->images as $image)
+                        <div class="rounded-lg overflow-hidden border border-default-200 shadow-sm">
+                            <img src="{{ asset('storage/' . $image->image_path) }}" class="w-full h-32 object-cover" alt="{{ $project->title }} gallery image" loading="lazy" decoding="async">
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <div class="rounded-lg border border-dashed border-default-300 bg-default-50 dark:bg-zinc-900 p-8 text-center text-sm text-default-500">
+                    No gallery photos uploaded yet.
+                </div>
+            @endif
+        </div>
+    </div>
 @endsection
 
 @section('scripts')

@@ -73,6 +73,8 @@ class ProjectController extends Controller
      */
     public function show(Project $project)
     {
+        $project->load(['category', 'images']);
+
         return view('projects.show', compact('project'));
     }
 
@@ -173,15 +175,18 @@ class ProjectController extends Controller
      *
      * @return RedirectResponse
      */
-    public function deleteGalleryImage($id)
+    public function deleteGalleryImage(Project $project, int $image): RedirectResponse
     {
-        $image = \App\Models\ProjectImage::findOrFail($id);
-        
-        // Hapus file fisik
-        \Illuminate\Support\Facades\Storage::disk('public')->delete($image->image_path);
-        
-        // Hapus record database
-        $image->delete();
+        if (! $this->projectService->deleteGalleryImage($project, $image)) {
+            return back()->with('error', 'Failed to delete gallery image file.');
+        }
+
+        Log::channel('audit')->info('Gallery image deleted', [
+            'user_id' => auth()->id(),
+            'project_id' => $project->id,
+            'project_image_id' => $image,
+            'ip' => request()->ip(),
+        ]);
 
         return back()->with('success', 'Gallery image deleted successfully!');
     }
