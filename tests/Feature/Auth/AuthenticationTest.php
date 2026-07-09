@@ -53,6 +53,25 @@ class AuthenticationTest extends TestCase
         $this->assertGuest();
     }
 
+    public function test_admin_intended_url_redirects_to_dashboard_after_login(): void
+    {
+        Http::fake([
+            'https://challenges.cloudflare.com/turnstile/v0/siteverify' => Http::response(['success' => true]),
+        ]);
+
+        $user = User::factory()->create();
+
+        $this->get('/admin')->assertRedirect(route('login'));
+
+        $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'password',
+            'cf-turnstile-response' => 'test-token',
+        ])->assertRedirect('/admin');
+
+        $this->get('/admin')->assertRedirect(route('dashboard', absolute: false));
+    }
+
     public function test_users_can_logout(): void
     {
         $user = User::factory()->create();

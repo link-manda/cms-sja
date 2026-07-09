@@ -19,6 +19,7 @@ Route::get('/projects', [PublicProjectController::class, 'index'])->name('public
 Route::get('/case-study/{slug}', [PublicProjectController::class, 'show'])->name('public.projects.show');
 
 Route::middleware(['auth', 'verified'])->group(function () {
+    Route::redirect('/admin', '/dashboard');
     Route::get('/dashboard', [RoutingController::class, 'index'])->name('dashboard');
 
     // Project Archive Routes
