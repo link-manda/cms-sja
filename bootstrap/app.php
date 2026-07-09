@@ -15,6 +15,15 @@ return Application::configure(basePath: dirname(__DIR__))
         //
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // Handle PostTooLargeException gracefully
+        $exceptions->render(function (\Illuminate\Http\Exceptions\PostTooLargeException $e, Request $request) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Total file size is too large.'], 413);
+            }
+            
+            return response()->view('errors.413', [], 413);
+        });
+
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*'),
         );

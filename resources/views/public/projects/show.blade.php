@@ -179,19 +179,49 @@
                 : (file_exists(public_path('assets/' . $project->image)) 
                     ? asset('assets/' . $project->image) 
                     : asset('storage/projects/' . $project->image));
+                    
+            $allImages = [$imagePath];
+            foreach($project->images as $img) {
+                $allImages[] = asset('storage/' . $img->image_path);
+            }
         @endphp
         
-        <div class="relative rounded-[2rem] overflow-hidden shadow-2xl mb-16 border border-white/50 w-full aspect-video md:aspect-[21/9] animate-reveal-up" style="animation-delay: 200ms;">
-            <img src="{{ $imagePath }}" alt="{{ $project->title }}" class="w-full h-full object-cover">
-            
-            @if ($project->status === 'Completed')
-                <div class="absolute top-6 right-6 glass-panel px-5 py-2 rounded-full text-sm font-semibold text-success tracking-wider uppercase border border-success/20">
-                    Completed
-                </div>
-            @else
-                <div class="absolute top-6 right-6 bg-secondary text-white px-5 py-2 rounded-full text-sm font-semibold tracking-wider uppercase shadow-glow">
-                    Ongoing
-                </div>
+        <!-- Carousel Gallery Section -->
+        <div class="mb-16 animate-reveal-up" style="animation-delay: 200ms;" id="project-carousel" data-images="{{ json_encode($allImages) }}">
+            <!-- Main Display -->
+            <div class="relative rounded-[2rem] overflow-hidden shadow-2xl border border-white/50 w-full aspect-video md:aspect-[21/9] bg-primary group">
+                <img id="main-carousel-img" src="{{ $allImages[0] }}" alt="{{ $project->title }}" class="w-full h-full object-cover transition-opacity duration-300 cursor-pointer" onclick="openLightbox(this.src)">
+                
+                @if ($project->status === 'Completed')
+                    <div class="absolute top-6 right-6 glass-panel px-5 py-2 rounded-full text-sm font-semibold text-success tracking-wider uppercase border border-success/20 z-10 pointer-events-none">
+                        Completed
+                    </div>
+                @else
+                    <div class="absolute top-6 right-6 bg-secondary text-white px-5 py-2 rounded-full text-sm font-semibold tracking-wider uppercase shadow-glow z-10 pointer-events-none">
+                        Ongoing
+                    </div>
+                @endif
+                
+                @if(count($allImages) > 1)
+                <!-- Navigation Arrows -->
+                <button onclick="prevImage(event)" class="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-secondary transition-all opacity-0 group-hover:opacity-100 z-10 border border-white/20 hover:scale-110 shadow-lg">
+                    <span class="material-symbols-outlined font-light text-3xl">chevron_left</span>
+                </button>
+                <button onclick="nextImage(event)" class="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-secondary transition-all opacity-0 group-hover:opacity-100 z-10 border border-white/20 hover:scale-110 shadow-lg">
+                    <span class="material-symbols-outlined font-light text-3xl">chevron_right</span>
+                </button>
+                @endif
+            </div>
+
+            <!-- Thumbnails -->
+            @if(count($allImages) > 1)
+            <div class="flex gap-4 overflow-x-auto py-4 no-scrollbar mt-4 snap-x">
+                @foreach($allImages as $index => $img)
+                    <button onclick="setImage({{ $index }})" id="thumb-{{ $index }}" class="carousel-thumb snap-start relative flex-shrink-0 w-28 h-20 md:w-40 md:h-28 rounded-xl overflow-hidden border-2 {{ $index === 0 ? 'border-secondary opacity-100 scale-100 shadow-md' : 'border-transparent opacity-50 hover:opacity-100 scale-95 hover:scale-100' }} transition-all duration-300">
+                        <img src="{{ $img }}" class="w-full h-full object-cover">
+                    </button>
+                @endforeach
+            </div>
             @endif
         </div>
 
@@ -207,6 +237,8 @@
                         {{ $project->description }}
                     </div>
                 </div>
+
+
             </div>
 
             <!-- Right: Metadata & CTA -->
@@ -401,8 +433,140 @@
             </div>
         </div>
     </footer>
+    <!-- Custom Lightbox Modal -->
+    <div id="gallery-lightbox" class="fixed inset-0 z-[100] bg-primary/95 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300 flex items-center justify-center p-4 sm:p-10" onclick="closeLightbox(event)">
+        <!-- Close Button -->
+        <button type="button" class="absolute top-6 right-6 sm:top-10 sm:right-10 text-white/50 hover:text-white transition-colors p-2 z-[101]" onclick="closeLightbox(event)">
+            <span class="material-symbols-outlined text-4xl font-light">close</span>
+        </button>
+        
+        <!-- Image Container -->
+        <div class="relative max-w-6xl w-full h-full flex items-center justify-center">
+            <div class="absolute inset-0 flex items-center justify-center">
+                <span id="lightbox-loader" class="material-symbols-outlined text-white/50 text-4xl animate-spin hidden">progress_activity</span>
+            </div>
+            <img id="lightbox-image" src="" alt="Gallery Preview" class="max-w-full max-h-full object-contain rounded-lg shadow-2xl scale-95 opacity-0 transition-all duration-300 relative z-10">
+        </div>
+    </div>
 
     <script>
+        // Carousel Slider Functions
+        let currentImageIndex = 0;
+        const carouselEl = document.getElementById('project-carousel');
+        let galleryImages = [];
+        if(carouselEl) {
+            galleryImages = JSON.parse(carouselEl.getAttribute('data-images') || '[]');
+        }
+
+        function setImage(index) {
+            if(galleryImages.length === 0) return;
+            currentImageIndex = index;
+            const mainImg = document.getElementById('main-carousel-img');
+            
+            // Fade out
+            mainImg.style.opacity = '0.4';
+            mainImg.style.transform = 'scale(0.98)';
+            
+            setTimeout(() => {
+                mainImg.src = galleryImages[currentImageIndex];
+                // Fade in
+                mainImg.style.opacity = '1';
+                mainImg.style.transform = 'scale(1)';
+            }, 200);
+            
+            // Update Thumbnails Styles
+            document.querySelectorAll('.carousel-thumb').forEach((thumb, i) => {
+                if(i === currentImageIndex) {
+                    thumb.classList.remove('border-transparent', 'opacity-50', 'scale-95');
+                    thumb.classList.add('border-secondary', 'opacity-100', 'scale-100', 'shadow-md');
+                    
+                    // Center the active thumbnail in the scroll view
+                    const container = thumb.parentElement;
+                    const scrollLeft = thumb.offsetLeft - (container.clientWidth / 2) + (thumb.clientWidth / 2);
+                    container.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+                } else {
+                    thumb.classList.add('border-transparent', 'opacity-50', 'scale-95');
+                    thumb.classList.remove('border-secondary', 'opacity-100', 'scale-100', 'shadow-md');
+                }
+            });
+        }
+
+        function nextImage(e) {
+            if(e) e.stopPropagation();
+            if(galleryImages.length <= 1) return;
+            let newIndex = currentImageIndex + 1;
+            if(newIndex >= galleryImages.length) newIndex = 0;
+            setImage(newIndex);
+        }
+
+        function prevImage(e) {
+            if(e) e.stopPropagation();
+            if(galleryImages.length <= 1) return;
+            let newIndex = currentImageIndex - 1;
+            if(newIndex < 0) newIndex = galleryImages.length - 1;
+            setImage(newIndex);
+        }
+
+        // Lightbox Functions
+        function openLightbox(imgSrc) {
+            const lightbox = document.getElementById('gallery-lightbox');
+            const img = document.getElementById('lightbox-image');
+            const loader = document.getElementById('lightbox-loader');
+            
+            // Show modal background
+            lightbox.classList.remove('hidden');
+            // Small delay to allow display:block to apply before animating opacity
+            setTimeout(() => {
+                lightbox.classList.remove('opacity-0');
+                lightbox.classList.add('opacity-100');
+            }, 10);
+            
+            // Reset image state & show loader
+            img.classList.remove('scale-100', 'opacity-100');
+            img.classList.add('scale-95', 'opacity-0');
+            loader.classList.remove('hidden');
+            
+            // Load new image
+            img.src = imgSrc;
+            
+            img.onload = () => {
+                loader.classList.add('hidden');
+                img.classList.remove('scale-95', 'opacity-0');
+                img.classList.add('scale-100', 'opacity-100');
+            };
+            
+            // Prevent scrolling on body
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeLightbox(e) {
+            // Close if clicking the background, close button, or the image itself
+            const lightbox = document.getElementById('gallery-lightbox');
+            const img = document.getElementById('lightbox-image');
+            
+            lightbox.classList.remove('opacity-100');
+            lightbox.classList.add('opacity-0');
+            
+            img.classList.remove('scale-100', 'opacity-100');
+            img.classList.add('scale-95', 'opacity-0');
+            
+            setTimeout(() => {
+                lightbox.classList.add('hidden');
+                // Restore scrolling
+                document.body.style.overflow = '';
+            }, 300);
+        }
+
+        // Close on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const lightbox = document.getElementById('gallery-lightbox');
+                if (!lightbox.classList.contains('hidden')) {
+                    closeLightbox();
+                }
+            }
+        });
+
         document.addEventListener('DOMContentLoaded', () => {
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {

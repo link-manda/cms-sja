@@ -117,6 +117,46 @@
                     <x-input-error :messages="$errors->get('image')" class="mt-2" />
                 </div>
 
+                <!-- Gallery Photos -->
+                <div class="border-t border-default-200 pt-5">
+                    <h6 class="text-sm font-semibold text-default-800 mb-4 flex items-center gap-1">
+                        <i class="size-4" data-lucide="image"></i> Project Gallery (Optional)
+                    </h6>
+                    <div>
+                        <!-- Native Drag and Drop Zone -->
+                        <div id="gallery-dropzone" class="relative flex flex-col items-center justify-center p-8 border-2 border-dashed border-default-300 rounded-lg bg-default-50 hover:bg-default-100 transition-colors cursor-pointer group">
+                            <input class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" id="gallery_images" name="gallery_images[]" type="file" accept="image/*" multiple />
+                            
+                            <div class="flex flex-col items-center pointer-events-none">
+                                <i class="size-10 text-default-400 group-hover:text-primary transition-colors mb-3" data-lucide="upload-cloud"></i>
+                                <p class="text-sm font-medium text-default-700">Drag & Drop your images here</p>
+                                <p class="text-xs text-default-400 mt-1">or click to browse from your computer</p>
+                            </div>
+                        </div>
+                        
+                        <!-- File Preview Area -->
+                        <div id="gallery-preview" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-4 hidden">
+                            <!-- JS will inject previews here -->
+                        </div>
+
+                        <p class="text-xs text-default-400 mt-2">You can select multiple files at once. Max 10 photos, up to 4MB each. Format: JPG, PNG, WEBP.</p>
+                        
+                        <!-- Fixed Validation Errors (Wildcard Array Loop) -->
+                        @if($errors->hasAny(['gallery_images', 'gallery_images.*']))
+                            <div class="mt-2 bg-danger/10 text-danger border border-danger/20 rounded p-3">
+                                @foreach($errors->get('gallery_images.*') as $messages)
+                                    @foreach($messages as $message)
+                                        <p class="text-sm flex items-center gap-1"><i class="size-4" data-lucide="alert-circle"></i> {{ $message }}</p>
+                                    @endforeach
+                                @endforeach
+                                @if($errors->has('gallery_images'))
+                                    <p class="text-sm flex items-center gap-1"><i class="size-4" data-lucide="alert-circle"></i> {{ $errors->first('gallery_images') }}</p>
+                                @endif
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
                 <!-- SEO Settings (Optional) -->
                 <div class="border-t border-default-200 pt-5">
                     <h6 class="text-sm font-semibold text-default-800 mb-4 flex items-center gap-1">
@@ -149,6 +189,82 @@
 @section('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Drag and Drop Gallery Logic
+            const dropzone = document.getElementById('gallery-dropzone');
+            const fileInput = document.getElementById('gallery_images');
+            const previewArea = document.getElementById('gallery-preview');
+
+            if (dropzone && fileInput && previewArea) {
+                const handleFiles = (files) => {
+                    previewArea.innerHTML = ''; // Clear preview
+                    previewArea.classList.remove('hidden');
+                    
+                    Array.from(files).forEach((file, index) => {
+                        if (!file.type.startsWith('image/')) return;
+                        
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            const div = document.createElement('div');
+                            div.className = 'relative rounded overflow-hidden aspect-square border border-default-200';
+                            div.innerHTML = `
+                                <img src="${e.target.result}" class="w-full h-full object-cover">
+                                <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                                    <span class="text-white text-xs font-semibold px-2 text-center line-clamp-2">${file.name}</span>
+                                </div>
+                            `;
+                            previewArea.appendChild(div);
+                        };
+                        reader.readAsDataURL(file);
+                    });
+                };
+
+                // Handle file input change
+                fileInput.addEventListener('change', (e) => {
+                    handleFiles(e.target.files);
+                });
+
+                // Drag and Drop events
+                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                    dropzone.addEventListener(eventName, preventDefaults, false);
+                });
+
+                function preventDefaults(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    dropzone.addEventListener(eventName, highlight, false);
+                });
+
+                ['dragleave', 'drop'].forEach(eventName => {
+                    dropzone.addEventListener(eventName, unhighlight, false);
+                });
+
+                function highlight(e) {
+                    dropzone.classList.add('bg-primary/10', 'border-primary');
+                }
+
+                function unhighlight(e) {
+                    dropzone.classList.remove('bg-primary/10', 'border-primary');
+                }
+
+                dropzone.addEventListener('drop', handleDrop, false);
+
+                function handleDrop(e) {
+                    let dt = e.dataTransfer;
+                    let files = dt.files;
+                    
+                    // Assign files to the native input
+                    const dataTransfer = new DataTransfer();
+                    Array.from(files).forEach(file => dataTransfer.items.add(file));
+                    fileInput.files = dataTransfer.files;
+                    
+                    handleFiles(files);
+                }
+            }
+
+            // Slug Auto-generation
             const titleInput = document.getElementById('title');
             const slugInput = document.getElementById('slug');
 

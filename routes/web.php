@@ -29,6 +29,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('manage/projects/{id}/force-delete', [ProjectController::class, 'forceDelete'])
         ->middleware('throttle:5,1')
         ->name('projects.force-delete');
+    
+    // Rute untuk menghapus 1 foto spesifik dari galeri
+    Route::delete('manage/projects/gallery/{id}', [ProjectController::class, 'deleteGalleryImage'])
+        ->middleware('throttle:30,1')
+        ->name('projects.gallery.delete');
 
     Route::resource('manage/projects', ProjectController::class)
         ->names('projects')

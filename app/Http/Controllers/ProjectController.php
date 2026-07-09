@@ -167,4 +167,22 @@ class ProjectController extends Controller
         return redirect()->route('projects.archive')
             ->with('success', 'Project deleted permanently!');
     }
+
+    /**
+     * Menghapus 1 gambar spesifik dari galeri.
+     *
+     * @return RedirectResponse
+     */
+    public function deleteGalleryImage($id)
+    {
+        $image = \App\Models\ProjectImage::findOrFail($id);
+        
+        // Hapus file fisik
+        \Illuminate\Support\Facades\Storage::disk('public')->delete($image->image_path);
+        
+        // Hapus record database
+        $image->delete();
+
+        return back()->with('success', 'Gallery image deleted successfully!');
+    }
 }

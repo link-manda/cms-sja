@@ -24,8 +24,24 @@ class ProjectService
             $data['image']->storeAs('projects', $filename, 'public');
             $data['image'] = $filename;
         }
+        // Tangkap gallery_images sebelum dikirim ke ::create
+        $galleryImages = $data['gallery_images'] ?? [];
+        unset($data['gallery_images']);
 
-        return Project::create($data);
+        $project = Project::create($data);
+
+        // Kelola upload gambar galeri jika ada
+        if (!empty($galleryImages)) {
+            foreach ($galleryImages as $image) {
+                if ($image instanceof UploadedFile) {
+                    $filename = Str::random(40).'.'.$image->getClientOriginalExtension();
+                    $image->storeAs('projects/gallery', $filename, 'public');
+                    $project->images()->create(['image_path' => 'projects/gallery/' . $filename]);
+                }
+            }
+        }
+
+        return $project;
     }
 
     /**
@@ -48,8 +64,24 @@ class ProjectService
             // Pertahankan gambar lama jika tidak di-upload gambar baru
             unset($data['image']);
         }
+        // Tangkap gallery_images jika ada upload baru
+        $galleryImages = $data['gallery_images'] ?? [];
+        unset($data['gallery_images']);
 
-        return $project->update($data);
+        $updated = $project->update($data);
+
+        // Kelola upload gambar galeri baru
+        if (!empty($galleryImages)) {
+            foreach ($galleryImages as $image) {
+                if ($image instanceof UploadedFile) {
+                    $filename = Str::random(40).'.'.$image->getClientOriginalExtension();
+                    $image->storeAs('projects/gallery', $filename, 'public');
+                    $project->images()->create(['image_path' => 'projects/gallery/' . $filename]);
+                }
+            }
+        }
+
+        return $updated;
     }
 
     /**
@@ -66,10 +98,18 @@ class ProjectService
      */
     public function forceDeleteProject(Project $project): ?bool
     {
-        // Hapus file gambar dari disk
+        // Hapus file gambar utama dari disk
         if ($project->image) {
             Storage::disk('public')->delete('projects/'.$project->image);
         }
+
+        // Hapus file gambar galeri dari disk
+        foreach ($project->images as $galleryImage) {
+            Storage::disk('public')->delete($galleryImage->image_path);
+        }
+        
+        // Hapus record gallery (jika cascade on delete belum diset di database)
+        $project->images()->delete();
 
         return $project->forceDelete();
     }

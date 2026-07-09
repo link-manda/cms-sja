@@ -39,6 +39,8 @@ class UpdateProjectRequest extends FormRequest
             'execution_team' => 'nullable|string|max:255',
             'meta_title' => 'nullable|string|max:255',
             'meta_description' => 'nullable|string',
+            'gallery_images' => 'nullable|array|max:10',
+            'gallery_images.*' => 'image|mimes:jpeg,png,jpg,webp|max:4096|dimensions:max_width=4096,max_height=4096',
         ];
     }
 }
