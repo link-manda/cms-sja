@@ -22,7 +22,7 @@ class ProjectService
     public function createProject(array $data): Project
     {
         if (isset($data['image']) && $data['image'] instanceof UploadedFile) {
-            $filename = Str::random(40).'.'.$data['image']->getClientOriginalExtension();
+            $filename = Str::random(40).'.'.$data['image']->extension();
             $data['image']->storeAs('projects', $filename, 'public');
             $data['image'] = $filename;
         }
@@ -48,7 +48,7 @@ class ProjectService
                 Storage::disk('public')->delete('projects/'.$project->image);
             }
 
-            $filename = Str::random(40).'.'.$data['image']->getClientOriginalExtension();
+            $filename = Str::random(40).'.'.$data['image']->extension();
             $data['image']->storeAs('projects', $filename, 'public');
             $data['image'] = $filename;
         } else {
@@ -76,7 +76,7 @@ class ProjectService
                     continue;
                 }
 
-                $filename = Str::random(40).'.'.$image->getClientOriginalExtension();
+                $filename = Str::random(40).'.'.$image->extension();
                 $path = 'projects/gallery/'.$filename;
 
                 if (! $image->storeAs('projects/gallery', $filename, 'public')) {

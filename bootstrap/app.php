@@ -20,7 +20,13 @@ return Application::configure(basePath: dirname(__DIR__))
             if ($request->expectsJson()) {
                 return response()->json(['message' => 'Total file size is too large.'], 413);
             }
-            
+
+            if ($request->is('manage/projects*')) {
+                return back()->withErrors([
+                    'gallery_images' => 'Total upload size is too large. Each gallery photo may not be greater than 4 MB, main photo may not be greater than 2 MB, and gallery may contain up to 10 photos.',
+                ]);
+            }
+
             return response()->view('errors.413', [], 413);
         });
 

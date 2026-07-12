@@ -41,6 +41,17 @@ php artisan boost:install
 
 Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
 
+## Deployment Notes
+
+Gallery uploads accept up to 10 photos per project, 4 MB per gallery photo, and 2 MB for the main photo. Production PHP and web server limits must allow that payload:
+
+```ini
+upload_max_filesize=8M
+post_max_size=64M
+```
+
+If using Nginx, set `client_max_body_size 64M;`. If using Apache, ensure `LimitRequestBody` does not block 64 MB uploads.
+
 ## Contributing
 
 Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).

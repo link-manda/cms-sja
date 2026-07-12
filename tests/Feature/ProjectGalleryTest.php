@@ -114,9 +114,100 @@ class ProjectGalleryTest extends TestCase
 
         $response
             ->assertRedirect(route('projects.edit', $project))
-            ->assertSessionHasErrors('gallery_images');
+            ->assertSessionHasErrors(['gallery_images' => 'Gallery may not contain more than 10 photos per project.']);
 
         $this->assertCount(10, $project->refresh()->images);
+    }
+
+    public function test_gallery_upload_rejects_non_image_file_with_jpg_extension(): void
+    {
+        Storage::fake('public');
+
+        $category = Category::factory()->create();
+
+        $response = $this->actingAs($this->user)->from(route('projects.create'))->post(route('projects.store'), [
+            'title' => 'Invalid Gallery Project',
+            'slug' => 'invalid-gallery-project',
+            'category_id' => $category->id,
+            'location' => 'Bali',
+            'description' => 'Project with invalid gallery image.',
+            'image' => UploadedFile::fake()->image('main.jpg'),
+            'status' => 'Ongoing',
+            'gallery_images' => [UploadedFile::fake()->create('bad.jpg', 10, 'text/plain')],
+        ]);
+
+        $response
+            ->assertRedirect(route('projects.create'))
+            ->assertSessionHasErrors('gallery_images.0');
+    }
+
+    public function test_gallery_upload_rejects_unsupported_extension(): void
+    {
+        Storage::fake('public');
+
+        $category = Category::factory()->create();
+
+        $response = $this->actingAs($this->user)->from(route('projects.create'))->post(route('projects.store'), [
+            'title' => 'Unsafe Extension Project',
+            'slug' => 'unsafe-extension-project',
+            'category_id' => $category->id,
+            'location' => 'Bali',
+            'description' => 'Project with unsafe extension.',
+            'image' => UploadedFile::fake()->image('main.jpg'),
+            'status' => 'Ongoing',
+            'gallery_images' => [UploadedFile::fake()->image('shell.php')],
+        ]);
+
+        $response
+            ->assertRedirect(route('projects.create'))
+            ->assertSessionHasErrors(['gallery_images.0' => 'Gallery photo extension must be .jpg, .jpeg, .png, or .webp.']);
+    }
+
+    public function test_gallery_upload_rejects_files_larger_than_four_mb(): void
+    {
+        Storage::fake('public');
+
+        $category = Category::factory()->create();
+
+        $response = $this->actingAs($this->user)->from(route('projects.create'))->post(route('projects.store'), [
+            'title' => 'Large Gallery Project',
+            'slug' => 'large-gallery-project',
+            'category_id' => $category->id,
+            'location' => 'Bali',
+            'description' => 'Project with large gallery image.',
+            'image' => UploadedFile::fake()->image('main.jpg'),
+            'status' => 'Ongoing',
+            'gallery_images' => [UploadedFile::fake()->image('large.jpg')->size(4097)],
+        ]);
+
+        $response
+            ->assertRedirect(route('projects.create'))
+            ->assertSessionHasErrors(['gallery_images.0' => 'Each gallery photo may not be greater than 4 MB.']);
+    }
+
+    public function test_gallery_upload_has_clear_message_when_php_upload_limit_rejects_file(): void
+    {
+        Storage::fake('public');
+
+        $category = Category::factory()->create();
+        $tmpFile = tmpfile();
+        $tmpPath = stream_get_meta_data($tmpFile)['uri'];
+        $file = new UploadedFile($tmpPath, 'too-large-for-php.jpg', 'image/jpeg', UPLOAD_ERR_INI_SIZE, true);
+
+        $response = $this->actingAs($this->user)->from(route('projects.create'))->post(route('projects.store'), [
+            'title' => 'PHP Limit Gallery Project',
+            'slug' => 'php-limit-gallery-project',
+            'category_id' => $category->id,
+            'location' => 'Bali',
+            'description' => 'Project with PHP rejected gallery image.',
+            'image' => UploadedFile::fake()->image('main.jpg'),
+            'status' => 'Ongoing',
+            'gallery_images' => [$file],
+        ]);
+
+        $response
+            ->assertRedirect(route('projects.create'))
+            ->assertSessionHasErrors(['gallery_images.0' => 'Gallery photo failed to upload. Each gallery photo may not be greater than 4 MB and the server upload limit must allow 4 MB files.']);
     }
 
     public function test_public_project_case_study_shows_gallery_carousel_images(): void

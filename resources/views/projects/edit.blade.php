@@ -120,7 +120,7 @@
                             <img src="{{ asset('storage/projects/' . $project->image) }}" alt="{{ $project->title }}" class="h-24 w-36 object-cover rounded border border-default-200">
                         </div>
                     @endif
-                    <input class="form-input p-1.5" id="image" name="image" type="file" accept="image/*" />
+                    <input class="form-input p-1.5" id="image" name="image" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
                     <p class="text-xs text-default-400 mt-1">Leave blank if you do not want to replace the project photo.</p>
                     <x-input-error :messages="$errors->get('image')" class="mt-2" />
                 </div>
@@ -133,7 +133,7 @@
                     <div>
                         <!-- Native Drag and Drop Zone -->
                         <div id="gallery-dropzone" class="relative flex flex-col items-center justify-center p-8 border-2 border-dashed border-default-300 rounded-lg bg-default-50 hover:bg-default-100 transition-colors cursor-pointer group">
-                            <input class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" id="gallery_images" name="gallery_images[]" type="file" accept="image/*" multiple />
+                            <input class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" id="gallery_images" name="gallery_images[]" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" multiple />
                             
                             <div class="flex flex-col items-center pointer-events-none">
                                 <i class="size-10 text-default-400 group-hover:text-primary transition-colors mb-3" data-lucide="upload-cloud"></i>
@@ -147,19 +147,20 @@
                             <!-- JS will inject previews here -->
                         </div>
 
-                        <p class="text-xs text-default-400 mt-2">Upload additional photos to the gallery. Max 10 photos, up to 4MB each. Format: JPG, PNG, WEBP.</p>
-                        
+                        <p class="text-xs text-default-400 mt-2">Upload additional photos to the gallery. Max 10 photos total, up to 4MB each, max resolution 4096×4096px. Format: JPG, PNG, WEBP.</p>
+                        <div id="gallery-upload-errors" class="mt-2 bg-danger/10 text-danger border border-danger/20 rounded p-3 hidden"></div>
+
                         <!-- Fixed Validation Errors (Wildcard Array Loop) -->
                         @if($errors->hasAny(['gallery_images', 'gallery_images.*']))
                             <div class="mt-2 bg-danger/10 text-danger border border-danger/20 rounded p-3">
+                                @if($errors->has('gallery_images'))
+                                    <p class="text-sm flex items-center gap-1"><i class="size-4" data-lucide="alert-circle"></i> {{ $errors->first('gallery_images') }}</p>
+                                @endif
                                 @foreach($errors->get('gallery_images.*') as $messages)
                                     @foreach($messages as $message)
                                         <p class="text-sm flex items-center gap-1"><i class="size-4" data-lucide="alert-circle"></i> {{ $message }}</p>
                                     @endforeach
                                 @endforeach
-                                @if($errors->has('gallery_images'))
-                                    <p class="text-sm flex items-center gap-1"><i class="size-4" data-lucide="alert-circle"></i> {{ $errors->first('gallery_images') }}</p>
-                                @endif
                             </div>
                         @endif
                     </div>
@@ -254,27 +255,109 @@
             const previewArea = document.getElementById('gallery-preview');
 
             if (dropzone && fileInput && previewArea) {
+                const errorBox = document.getElementById('gallery-upload-errors');
+                const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+                const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+                const maxFileSize = 4 * 1024 * 1024;
+                const existingGalleryCount = {{ $project->images->count() }};
+                const maxFiles = Math.max(0, 10 - existingGalleryCount);
+
+                const showGalleryErrors = (messages) => {
+                    if (!errorBox) return;
+
+                    errorBox.innerHTML = '';
+                    messages.forEach((message) => {
+                        const p = document.createElement('p');
+                        p.className = 'text-sm flex items-center gap-1';
+                        p.textContent = message;
+                        errorBox.appendChild(p);
+                    });
+                    errorBox.classList.remove('hidden');
+                };
+
+                const clearGalleryErrors = () => {
+                    if (!errorBox) return;
+
+                    errorBox.innerHTML = '';
+                    errorBox.classList.add('hidden');
+                };
+
+                const validateFiles = (files) => {
+                    const errors = [];
+                    const selectedFiles = Array.from(files);
+
+                    if (selectedFiles.length > maxFiles) {
+                        errors.push(maxFiles > 0
+                            ? `You can upload up to ${maxFiles} more gallery photos.`
+                            : 'Gallery already has 10 photos. Delete an existing photo before uploading more.');
+                    }
+
+                    selectedFiles.forEach((file) => {
+                        const extension = file.name.split('.').pop().toLowerCase();
+
+                        if (!allowedTypes.includes(file.type) || !allowedExtensions.includes(extension)) {
+                            errors.push(`${file.name}: format must be JPG, PNG, or WEBP.`);
+                        }
+
+                        if (file.size > maxFileSize) {
+                            errors.push(`${file.name}: size may not be greater than 4 MB.`);
+                        }
+                    });
+
+                    return errors;
+                };
+
+                const appendPreview = (file, src) => {
+                    const div = document.createElement('div');
+                    div.className = 'relative rounded overflow-hidden aspect-square border border-default-200';
+
+                    const img = document.createElement('img');
+                    img.src = src;
+                    img.className = 'w-full h-full object-cover';
+                    img.alt = file.name;
+
+                    const overlay = document.createElement('div');
+                    overlay.className = 'absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity';
+
+                    const label = document.createElement('span');
+                    label.className = 'text-white text-xs font-semibold px-2 text-center line-clamp-2';
+                    label.textContent = file.name;
+
+                    overlay.appendChild(label);
+                    div.appendChild(img);
+                    div.appendChild(overlay);
+                    previewArea.appendChild(div);
+                };
+
                 const handleFiles = (files) => {
-                    previewArea.innerHTML = ''; // Clear preview
+                    const selectedFiles = Array.from(files);
+                    const errors = validateFiles(selectedFiles);
+
+                    if (errors.length > 0) {
+                        showGalleryErrors(errors);
+                        previewArea.innerHTML = '';
+                        previewArea.classList.add('hidden');
+                        fileInput.value = '';
+                        return false;
+                    }
+
+                    clearGalleryErrors();
+                    previewArea.innerHTML = '';
+
+                    if (selectedFiles.length === 0) {
+                        previewArea.classList.add('hidden');
+                        return true;
+                    }
+
                     previewArea.classList.remove('hidden');
-                    
-                    Array.from(files).forEach((file, index) => {
-                        if (!file.type.startsWith('image/')) return;
-                        
+
+                    selectedFiles.forEach((file) => {
                         const reader = new FileReader();
-                        reader.onload = (e) => {
-                            const div = document.createElement('div');
-                            div.className = 'relative rounded overflow-hidden aspect-square border border-default-200';
-                            div.innerHTML = `
-                                <img src="${e.target.result}" class="w-full h-full object-cover">
-                                <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                                    <span class="text-white text-xs font-semibold px-2 text-center line-clamp-2">${file.name}</span>
-                                </div>
-                            `;
-                            previewArea.appendChild(div);
-                        };
+                        reader.onload = (e) => appendPreview(file, e.target.result);
                         reader.readAsDataURL(file);
                     });
+
+                    return true;
                 };
 
                 // Handle file input change
@@ -311,15 +394,16 @@
                 dropzone.addEventListener('drop', handleDrop, false);
 
                 function handleDrop(e) {
-                    let dt = e.dataTransfer;
-                    let files = dt.files;
-                    
+                    const files = e.dataTransfer.files;
+
+                    if (!handleFiles(files)) {
+                        return;
+                    }
+
                     // Assign files to the native input
                     const dataTransfer = new DataTransfer();
                     Array.from(files).forEach(file => dataTransfer.items.add(file));
                     fileInput.files = dataTransfer.files;
-                    
-                    handleFiles(files);
                 }
             }
 
