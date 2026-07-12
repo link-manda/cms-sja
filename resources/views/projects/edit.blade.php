@@ -166,6 +166,52 @@
                     </div>
                 </div>
 
+                <!-- Promotion & Investment Features -->
+                <div class="p-6 bg-default-50 border border-default-200 rounded-lg mt-6 mb-6">
+                    <h3 class="text-lg font-bold text-default-900 mb-4">Promotion & Investment Features</h3>
+
+                    <!-- Toggle Switch (Checkbox) -->
+                    <div class="mb-4 flex items-center">
+                        <input type="checkbox" id="is_for_sale_or_rent" name="is_for_sale_or_rent" value="1"
+                            class="w-5 h-5 text-primary rounded border-default-300" {{ old('is_for_sale_or_rent', $project->is_for_sale_or_rent) ? 'checked' : '' }}>
+                        <label for="is_for_sale_or_rent" class="ml-2 text-sm font-medium text-default-700">
+                            Enable Property Promotion (Display Rent/Sale Price on Public Page)
+                        </label>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Property Type -->
+                        <div>
+                            <label class="block text-sm font-medium text-default-700 mb-1">Offer Type</label>
+                            <select name="property_type"
+                                class="w-full border-default-300 rounded-md shadow-sm focus:border-primary focus:ring-primary">
+                                <option value="">-- Select Type --</option>
+                                <option value="Rent" {{ old('property_type', $project->property_type) == 'Rent' ? 'selected' : '' }}>For Rent (Boarding/Villa)</option>
+                                <option value="Sale" {{ old('property_type', $project->property_type) == 'Sale' ? 'selected' : '' }}>For Sale (Unit/Land)</option>
+                            </select>
+                            <x-input-error :messages="$errors->get('property_type')" class="mt-1" />
+                        </div>
+
+                        <!-- Price -->
+                        <div>
+                            <label class="block text-sm font-medium text-default-700 mb-1">Price (IDR)</label>
+                            <input type="number" name="price" placeholder="Example: 1500000" value="{{ old('price', (int)$project->price ?: '') }}"
+                                class="w-full border-default-300 rounded-md shadow-sm focus:border-primary focus:ring-primary">
+                            <span class="text-xs text-default-500">Numbers only without dots (e.g., 1500000)</span>
+                            <x-input-error :messages="$errors->get('price')" class="mt-1" />
+                        </div>
+
+                        <!-- ROI Estimation -->
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-default-700 mb-1">ROI Estimation / Profit Details</label>
+                            <textarea name="roi_estimation" rows="3"
+                                placeholder="e.g. If the room is rented for 1.5 million/month, estimated ROI in 4 years."
+                                class="w-full border-default-300 rounded-md shadow-sm focus:border-primary focus:ring-primary">{{ old('roi_estimation', $project->roi_estimation) }}</textarea>
+                            <x-input-error :messages="$errors->get('roi_estimation')" class="mt-1" />
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Search Engine Settings (SEO) -->
                 <div class="border-t border-default-200 pt-5">
                     <h6 class="text-sm font-semibold text-default-800 mb-4 flex items-center gap-1">

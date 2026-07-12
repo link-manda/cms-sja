@@ -2,8 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreProjectRequest;
-use App\Http\Requests\UpdateProjectRequest;
+use Illuminate\Http\Request;
 use App\Models\Project;
 use App\Services\ProjectService;
 use Illuminate\Http\RedirectResponse;
@@ -51,19 +50,42 @@ class ProjectController extends Controller
      *
      * @return RedirectResponse
      */
-    public function store(StoreProjectRequest $request)
+    public function store(Request $request)
     {
-        $project = $this->projectService->createProject($request->validated());
+        // 1. Update Validasi Input
+        $validatedData = $request->validate([
+            'title' => 'required|max:255',
+            'slug' => 'required|unique:projects,slug',
+            'location' => 'nullable|max:255',
+            'status' => 'required|in:Ongoing,Completed',
+            'description' => 'nullable',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'meta_title' => 'nullable|max:255',
+            'meta_description' => 'nullable',
 
-        Log::channel('audit')->info('Project created', [
-            'user_id' => auth()->id(),
-            'project_id' => $project->id,
-            'title' => $project->title,
-            'ip' => request()->ip(),
+            // --- ATURAN VALIDASI BARU UNTUK FITUR PROMOSI ---
+            // Boolean akan bernilai true (1) jika dicentang, false (0) jika tidak
+            'is_for_sale_or_rent' => 'boolean',
+            'property_type' => 'nullable|in:Rent,Sale',
+            'price' => 'nullable|numeric',
+            'roi_estimation' => 'nullable|string',
+            
+            // --- GALLERY IMAGES ---
+            'gallery_images' => 'nullable|array|max:10',
+            'gallery_images.*' => 'image|mimes:jpeg,png,jpg,webp|max:4096'
         ]);
 
-        return redirect()->route('projects.index')
-            ->with('success', 'Project created successfully!');
+        // Pastikan checkbox boolean ter-handle dengan benar jika tidak dicentang
+        $validatedData['is_for_sale_or_rent'] = $request->has('is_for_sale_or_rent');
+
+        if ($request->hasFile('image')) {
+            $imagePath = $request->file('image')->store('projects', 'public');
+            $validatedData['image'] = $imagePath;
+        }
+
+        $this->projectService->createProject($validatedData);
+
+        return redirect()->route('projects.index')->with('success', 'Project created successfully!');
     }
 
     /**
@@ -95,19 +117,40 @@ class ProjectController extends Controller
      *
      * @return RedirectResponse
      */
-    public function update(UpdateProjectRequest $request, Project $project)
+    public function update(Request $request, Project $project)
     {
-        $this->projectService->updateProject($project, $request->validated());
+        // 1. Update Validasi Input
+        $validatedData = $request->validate([
+            'title' => 'required|max:255',
+            'slug' => 'required|unique:projects,slug,' . $project->id,
+            'location' => 'nullable|max:255',
+            'status' => 'required|in:Ongoing,Completed',
+            'description' => 'nullable',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'meta_title' => 'nullable|max:255',
+            'meta_description' => 'nullable',
 
-        Log::channel('audit')->info('Project updated', [
-            'user_id' => auth()->id(),
-            'project_id' => $project->id,
-            'title' => $project->title,
-            'ip' => request()->ip(),
+            // --- ATURAN VALIDASI BARU UNTUK FITUR PROMOSI ---
+            'is_for_sale_or_rent' => 'boolean',
+            'property_type' => 'nullable|in:Rent,Sale',
+            'price' => 'nullable|numeric',
+            'roi_estimation' => 'nullable|string',
+            
+            // --- GALLERY IMAGES ---
+            'gallery_images' => 'nullable|array|max:10',
+            'gallery_images.*' => 'image|mimes:jpeg,png,jpg,webp|max:4096'
         ]);
 
-        return redirect()->route('projects.index')
-            ->with('success', 'Project updated successfully!');
+        $validatedData['is_for_sale_or_rent'] = $request->has('is_for_sale_or_rent');
+
+        if ($request->hasFile('image')) {
+            $imagePath = $request->file('image')->store('projects', 'public');
+            $validatedData['image'] = $imagePath;
+        }
+
+        $this->projectService->updateProject($project, $validatedData);
+
+        return redirect()->route('projects.index')->with('success', 'Project updated successfully!');
     }
 
     /**

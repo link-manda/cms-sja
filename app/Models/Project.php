@@ -2,28 +2,12 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable([
-    'category_id',
-    'title',
-    'slug',
-    'location',
-    'description',
-    'image',
-    'status',
-    'client',
-    'year',
-    'building_area',
-    'land_area',
-    'execution_team',
-    'meta_title',
-    'meta_description',
-])]
+
 class Project extends Model
 {
     use HasFactory, SoftDeletes;
@@ -42,4 +26,25 @@ class Project extends Model
     {
         return $this->hasMany(ProjectImage::class);
     }
+    protected $fillable = [
+        'category_id',
+        'title',
+        'slug',
+        'location',
+        'description',
+        'image',
+        'status',
+        'client',
+        'year',
+        'building_area',
+        'land_area',
+        'execution_team',
+        'meta_title',
+        'meta_description',
+        // --- New Columns ---
+        'is_for_sale_or_rent',
+        'property_type',
+        'price',
+        'roi_estimation',
+    ];
 }
