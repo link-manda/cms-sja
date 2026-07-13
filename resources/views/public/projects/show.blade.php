@@ -365,38 +365,40 @@
 
                 <!-- Investment Promosi (Jika diaktifkan) -->
                 @if ($project->is_for_sale_or_rent)
-                    <div class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-3xl p-8 border border-orange-200 shadow-lg relative overflow-hidden">
-                        <!-- Decorative bg -->
-                        <div class="absolute -bottom-10 -right-10 w-32 h-32 bg-orange-400/20 blur-3xl rounded-full"></div>
+                    <div class="glass-panel rounded-3xl p-8 border border-success/10 shadow-glass relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+                        <div class="absolute -top-16 -right-16 w-40 h-40 bg-success/10 blur-3xl rounded-full pointer-events-none"></div>
 
-                        <div class="flex items-center gap-3 mb-6 relative z-10">
-                            <div class="bg-orange-500 text-white p-2.5 rounded-xl shadow-md">
-                                <span class="material-symbols-outlined font-light">real_estate_agent</span>
+                        <div class="flex items-start gap-4 mb-6 relative z-10">
+                            <div class="bg-success text-white p-3 rounded-2xl shadow-sm ring-4 ring-secondary/10">
+                                <span class="material-symbols-outlined font-light text-2xl">real_estate_agent</span>
                             </div>
-                            <h3 class="text-xl font-bold text-gray-900">Property Investment</h3>
+                            <div>
+                                <span class="block text-[10px] font-bold text-secondary uppercase tracking-[0.2em] mb-1">Investment Opportunity</span>
+                                <h3 class="text-xl font-bold text-primary leading-tight">Property Investment</h3>
+                            </div>
                         </div>
 
-                        <div class="grid grid-cols-2 gap-4 mb-5 relative z-10">
-                            <div class="bg-white/80 backdrop-blur-sm p-4 rounded-2xl shadow-sm border border-orange-100">
-                                <span class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Status</span>
-                                <span class="font-bold text-gray-900 text-lg">For {{ $project->property_type }}</span>
+                        <div class="grid grid-cols-1 gap-4 mb-5 relative z-10">
+                            <div class="bg-white/85 backdrop-blur-sm p-4 rounded-2xl shadow-sm border border-success/10">
+                                <span class="block text-xs font-bold text-muted uppercase tracking-wider mb-1">Status</span>
+                                <span class="font-bold text-primary text-lg">For {{ $project->property_type }}</span>
                             </div>
-                            <div class="bg-white/80 backdrop-blur-sm p-4 rounded-2xl shadow-sm border border-orange-100">
-                                <span class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Price</span>
-                                <span class="font-bold text-orange-600 text-lg">Rp {{ number_format($project->price, 0, ',', '.') }}</span>
+                            <div class="bg-white/85 backdrop-blur-sm p-4 rounded-2xl shadow-sm border border-secondary/20 min-w-0">
+                                <span class="block text-xs font-bold text-muted uppercase tracking-wider mb-1">Price</span>
+                                <span class="block font-bold text-secondary text-lg sm:text-xl leading-tight whitespace-nowrap">Rp&nbsp;{{ number_format($project->price, 0, ',', '.') }}</span>
                             </div>
                         </div>
 
                         @if ($project->roi_estimation)
-                            <div class="bg-white/80 backdrop-blur-sm p-5 rounded-2xl shadow-sm border border-orange-100 relative z-10 mb-6">
-                                <span class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">ROI Estimation</span>
-                                <p class="text-gray-700 text-sm leading-relaxed">{{ $project->roi_estimation }}</p>
+                            <div class="bg-success/5 backdrop-blur-sm p-5 rounded-2xl shadow-sm border border-success/10 relative z-10 mb-6">
+                                <span class="block text-xs font-bold text-success uppercase tracking-wider mb-2">ROI Estimation</span>
+                                <p class="text-muted text-sm leading-relaxed">{{ $project->roi_estimation }}</p>
                             </div>
                         @endif
 
                         <a href="https://wa.me/{{ format_wa_number(setting('contact_whatsapp', '628123456789')) }}?text=Hello%20SJA,%20I%20am%20interested%20in%20the%20investment%20opportunity%20for%20{{ urlencode($project->title) }}"
                             target="_blank"
-                            class="block w-full text-center bg-orange-500 hover:bg-orange-600 shadow-glow text-white font-bold py-3.5 px-4 rounded-xl transition duration-300 relative z-10 active:scale-95">
+                            class="block w-full text-center bg-secondary hover:bg-secondary-hover text-white font-bold py-3.5 px-4 rounded-xl transition-all duration-300 relative z-10 active:scale-95 focus:outline-none focus:ring-4 focus:ring-secondary/20">
                             Inquire Now
                         </a>
                     </div>
