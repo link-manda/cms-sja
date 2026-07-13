@@ -137,9 +137,15 @@ jobs:
         mkdir -p /home/sistemja/core-cms/public
         ln -sfn /home/sistemja/public_html/build /home/sistemja/core-cms/public/build
 
-        # Deploy storage files (copy instead of symlink to avoid LiteSpeed symlink 403)
-        rm -rf /home/sistemja/public_html/storage
-        cp -r /home/sistemja/core-cms/storage/app/public /home/sistemja/public_html/storage
+        # Public uploads live here in production. Do not delete this folder on deploy.
+        mkdir -p /home/sistemja/public_html/storage/projects/gallery
+        if [ -d /home/sistemja/core-cms/storage/app/public ]; then
+            cp -rn /home/sistemja/core-cms/storage/app/public/. /home/sistemja/public_html/storage/ 2>/dev/null || true
+        fi
+        if ! grep -q '^PUBLIC_STORAGE_PATH=' /home/sistemja/core-cms/.env; then
+            printf '\nPUBLIC_STORAGE_PATH=/home/sistemja/public_html/storage\n' >> /home/sistemja/core-cms/.env
+        fi
+        find /home/sistemja/public_html/storage -name .htaccess -delete
 
         # ===== SECURITY: Block web access to sensitive directories =====
 
@@ -207,6 +213,8 @@ jobs:
         chmod 640 /home/sistemja/core-cms/.env
         chmod -R 775 /home/sistemja/core-cms/storage
         chmod -R 775 /home/sistemja/core-cms/bootstrap/cache
+        find /home/sistemja/public_html/storage -type d -exec chmod 755 {} \;
+        find /home/sistemja/public_html/storage -type f -exec chmod 644 {} \;
 
         echo "Deploy completed successfully"
         REMOTE
