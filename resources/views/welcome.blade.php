@@ -411,7 +411,9 @@
                             ? $project->image
                             : (file_exists(public_path('assets/' . $project->image))
                                 ? asset('assets/' . $project->image)
-                                : asset('storage/projects/' . $project->image));
+                                : (str_starts_with($project->image, 'projects/')
+                                    ? asset('storage/' . $project->image)
+                                    : asset('storage/projects/' . $project->image)));
 
                         // Make the second item span 2 columns on large screens for dynamic layout
                         $colSpan = $index == 1 && $projects->count() >= 3 ? 'lg:col-span-2' : '';

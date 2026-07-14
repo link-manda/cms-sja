@@ -9,7 +9,9 @@
             ? $project->image
             : (file_exists(public_path('assets/' . $project->image))
                 ? asset('assets/' . $project->image)
-                : asset('storage/projects/' . $project->image));
+                : (str_starts_with($project->image, 'projects/')
+                    ? asset('storage/' . $project->image)
+                    : asset('storage/projects/' . $project->image)));
     @endphp
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
@@ -216,7 +218,9 @@
                 ? $project->image
                 : (file_exists(public_path('assets/' . $project->image))
                     ? asset('assets/' . $project->image)
-                    : asset('storage/projects/' . $project->image));
+                    : (str_starts_with($project->image, 'projects/')
+                        ? asset('storage/' . $project->image)
+                        : asset('storage/projects/' . $project->image)));
 
             $allImages = [$imagePath];
             foreach ($project->images as $img) {

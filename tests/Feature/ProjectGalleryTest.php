@@ -234,6 +234,20 @@ class ProjectGalleryTest extends TestCase
         $response->assertSee('decoding="async"', false);
     }
 
+    public function test_public_project_case_study_does_not_double_prefix_stored_main_image_path(): void
+    {
+        $project = Project::factory()->create([
+            'slug' => 'legacy-main-image-project',
+            'image' => 'projects/legacy-main.jpg',
+        ]);
+
+        $response = $this->get(route('public.projects.show', $project->slug));
+
+        $response->assertOk();
+        $response->assertSee('storage/projects/legacy-main.jpg', false);
+        $response->assertDontSee('storage/projects/projects/legacy-main.jpg', false);
+    }
+
     public function test_authenticated_user_can_delete_scoped_gallery_image(): void
     {
         Storage::fake('public');

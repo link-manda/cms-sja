@@ -241,7 +241,9 @@
                         ? $project->image
                         : (file_exists(public_path('assets/' . $project->image))
                             ? asset('assets/' . $project->image)
-                            : asset('storage/projects/' . $project->image));
+                            : (str_starts_with($project->image, 'projects/')
+                                ? asset('storage/' . $project->image)
+                                : asset('storage/projects/' . $project->image)));
                 @endphp
                 <a href="{{ route('public.projects.show', $project->slug) }}"
                     class="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 block animate-reveal-up"
