@@ -12,7 +12,17 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // Behind Cloudflare: trust its X-Forwarded-* headers so Laravel detects
+        // the real scheme (https) and client IP. Without this, session/CSRF
+        // cookies get the wrong `secure` flag and logins randomly 419.
+        $middleware->trustProxies(
+            at: '*',
+            headers: Request::HEADER_X_FORWARDED_FOR
+                | Request::HEADER_X_FORWARDED_HOST
+                | Request::HEADER_X_FORWARDED_PORT
+                | Request::HEADER_X_FORWARDED_PROTO
+                | Request::HEADER_X_FORWARDED_AWS_ELB,
+        );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Handle PostTooLargeException gracefully
