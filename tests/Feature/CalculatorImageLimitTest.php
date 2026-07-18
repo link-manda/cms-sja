@@ -45,6 +45,57 @@ class CalculatorImageLimitTest extends TestCase
         return $option;
     }
 
+    public function test_create_uses_one_file_field_for_all_zones(): void
+    {
+        $response = $this->actingAs($this->user)->get(route('calculator.create'));
+
+        $response->assertOk()
+            ->assertSee('name="images[]"', false)
+            ->assertDontSee('name="images_2d[]"', false)
+            ->assertDontSee('name="images_3d[]"', false)
+            ->assertDontSee('name="images_proses[]"', false);
+    }
+
+    public function test_store_preserves_zone_for_files_from_one_upload_field(): void
+    {
+        Storage::fake('public');
+
+        $response = $this->actingAs($this->user)->post(route('calculator.store'), [
+            'name' => 'Mixed Package',
+            'price_range' => 'IDR 250M',
+            'description' => 'Mixed visuals.',
+            'images' => [
+                UploadedFile::fake()->image('floor-plan.jpg'),
+                UploadedFile::fake()->image('render.jpg'),
+                UploadedFile::fake()->image('site.jpg'),
+            ],
+            'image_zones' => ['2d', '3d', 'proses'],
+        ]);
+
+        $response->assertRedirect(route('calculator.index'));
+        $this->assertSame(
+            ['2d', '3d', 'proses'],
+            CalculatorImage::query()->orderBy('id')->pluck('type')->all(),
+        );
+    }
+
+    public function test_store_rejects_scalar_zone_metadata_without_server_error(): void
+    {
+        Storage::fake('public');
+
+        $response = $this->actingAs($this->user)->from(route('calculator.create'))->post(route('calculator.store'), [
+            'name' => 'Malformed Package',
+            'price_range' => 'IDR 1',
+            'description' => 'Invalid zone payload.',
+            'images' => [UploadedFile::fake()->image('plan.jpg')],
+            'image_zones' => '2d',
+        ]);
+
+        $response->assertRedirect(route('calculator.create'))
+            ->assertSessionHasErrors('image_zones');
+        $this->assertSame(0, CalculatorImage::count());
+    }
+
     public function test_store_rejects_more_than_ten_new_images_across_zones(): void
     {
         Storage::fake('public');
@@ -53,13 +104,12 @@ class CalculatorImageLimitTest extends TestCase
             'name' => 'Big Package',
             'price_range' => 'IDR 1M',
             'description' => 'Too many images.',
-            'images_2d' => array_map(fn ($i) => UploadedFile::fake()->image("d2-{$i}.jpg"), range(1, 5)),
-            'images_3d' => array_map(fn ($i) => UploadedFile::fake()->image("d3-{$i}.jpg"), range(1, 4)),
-            'images_proses' => array_map(fn ($i) => UploadedFile::fake()->image("p-{$i}.jpg"), range(1, 3)),
+            'images' => array_map(fn ($i) => UploadedFile::fake()->image("image-{$i}.jpg"), range(1, 12)),
+            'image_zones' => array_fill(0, 12, '2d'),
         ]);
 
         $response->assertRedirect(route('calculator.create'))
-            ->assertSessionHasErrors('images_2d');
+            ->assertSessionHasErrors('images');
 
         $this->assertSame(0, CalculatorImage::count());
     }
@@ -75,11 +125,12 @@ class CalculatorImageLimitTest extends TestCase
             'name' => $option->name,
             'price_range' => $option->price_range,
             'description' => $option->description,
-            'images_2d' => array_map(fn ($i) => UploadedFile::fake()->image("new-{$i}.jpg"), range(1, 4)),
+            'images' => array_map(fn ($i) => UploadedFile::fake()->image("new-{$i}.jpg"), range(1, 4)),
+            'image_zones' => array_fill(0, 4, '2d'),
         ]);
 
         $response->assertRedirect(route('calculator.edit', $option))
-            ->assertSessionHasErrors('images_2d');
+            ->assertSessionHasErrors('images');
 
         // Tidak ada gambar baru tersimpan; tetap 8.
         $this->assertSame(8, $option->refresh()->images()->count());
@@ -96,7 +147,8 @@ class CalculatorImageLimitTest extends TestCase
             'name' => $option->name,
             'price_range' => $option->price_range,
             'description' => $option->description,
-            'images_3d' => array_map(fn ($i) => UploadedFile::fake()->image("ok-{$i}.jpg"), range(1, 3)),
+            'images' => array_map(fn ($i) => UploadedFile::fake()->image("ok-{$i}.jpg"), range(1, 3)),
+            'image_zones' => array_fill(0, 3, '3d'),
         ]);
 
         $response->assertRedirect(route('calculator.index'));

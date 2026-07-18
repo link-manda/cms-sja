@@ -16,22 +16,13 @@ use Throwable;
  */
 class CalculatorOptionService
 {
-    /**
-     * Mapping key input form ke nilai kolom `type` pada calculator_images.
-     */
-    private const IMAGE_ZONES = [
-        'images_2d' => '2d',
-        'images_3d' => '3d',
-        'images_proses' => 'proses',
-    ];
-
     public function createOption(array $data): CalculatorOption
     {
-        $zones = $this->extractZones($data);
+        $images = $this->extractImages($data);
 
-        return DB::transaction(function () use ($data, $zones) {
+        return DB::transaction(function () use ($data, $images) {
             $option = CalculatorOption::create($data);
-            $this->storeImages($option, $zones);
+            $this->storeImages($option, $images);
 
             return $option;
         });
@@ -39,65 +30,58 @@ class CalculatorOptionService
 
     public function updateOption(CalculatorOption $option, array $data): bool
     {
-        $zones = $this->extractZones($data);
+        $images = $this->extractImages($data);
 
-        return DB::transaction(function () use ($option, $data, $zones) {
+        return DB::transaction(function () use ($option, $data, $images) {
             $updated = $option->update($data);
-            $this->storeImages($option, $zones);
+            $this->storeImages($option, $images);
 
             return $updated;
         });
     }
 
     /**
-     * Pisahkan file upload per-zona dari payload data, sekalian buang key-nya
-     * agar tidak ikut ter-mass-assign ke model.
+     * Pasangkan file dengan zona berdasarkan urutan multipart, lalu buang
+     * kedua field agar tidak ikut ter-mass-assign ke model.
      *
-     * @return array<string, array<UploadedFile>>
+     * @return array<int, array{file: UploadedFile, zone: string}>
      */
-    private function extractZones(array &$data): array
+    private function extractImages(array &$data): array
     {
-        $zones = [];
+        $files = $data['images'] ?? [];
+        $zones = $data['image_zones'] ?? [];
+        unset($data['images'], $data['image_zones']);
 
-        foreach (array_keys(self::IMAGE_ZONES) as $key) {
-            $zones[$key] = $data[$key] ?? [];
-            unset($data[$key]);
-        }
-
-        return $zones;
+        return array_map(
+            fn (UploadedFile $file, string $zone): array => compact('file', 'zone'),
+            $files,
+            $zones,
+        );
     }
 
     /**
-     * Simpan seluruh gambar dari tiap zona dengan menandai kolom `type`.
-     * Rollback file yang sudah tersimpan jika salah satu gagal.
+     * Simpan seluruh gambar dengan zona pasangannya. Rollback file yang sudah
+     * tersimpan jika salah satu gagal.
      */
-    private function storeImages(CalculatorOption $option, array $zones): void
+    private function storeImages(CalculatorOption $option, array $images): void
     {
         $storedPaths = [];
 
         try {
-            foreach ($zones as $key => $images) {
-                $type = self::IMAGE_ZONES[$key];
+            foreach ($images as ['file' => $image, 'zone' => $zone]) {
+                $filename = Str::random(40).'.'.$image->extension();
+                $path = 'calculator/'.$filename;
 
-                foreach ($images as $image) {
-                    if (! $image instanceof UploadedFile) {
-                        continue;
-                    }
-
-                    $filename = Str::random(40).'.'.$image->extension();
-                    $path = 'calculator/'.$filename;
-
-                    if (! $image->storeAs('calculator', $filename, 'public')) {
-                        throw new RuntimeException('Failed to store calculator image.');
-                    }
-
-                    $storedPaths[] = $path;
-
-                    $option->images()->create([
-                        'image_path' => $path,
-                        'type' => $type,
-                    ]);
+                if (! $image->storeAs('calculator', $filename, 'public')) {
+                    throw new RuntimeException('Failed to store calculator image.');
                 }
+
+                $storedPaths[] = $path;
+
+                $option->images()->create([
+                    'image_path' => $path,
+                    'type' => $zone,
+                ]);
             }
         } catch (Throwable $exception) {
             Storage::disk('public')->delete($storedPaths);

@@ -22,12 +22,10 @@ class StoreCalculatorOptionRequest extends FormRequest
             'name' => 'required|string|max:255',
             'price_range' => 'required|string|max:255',
             'description' => 'required|string',
-            'images_2d' => 'nullable|array',
-            'images_3d' => 'nullable|array',
-            'images_proses' => 'nullable|array',
-            'images_2d.*' => 'image|mimes:jpeg,png,jpg,webp|extensions:jpg,jpeg,png,webp|max:4096|dimensions:max_width=4096,max_height=4096',
-            'images_3d.*' => 'image|mimes:jpeg,png,jpg,webp|extensions:jpg,jpeg,png,webp|max:4096|dimensions:max_width=4096,max_height=4096',
-            'images_proses.*' => 'image|mimes:jpeg,png,jpg,webp|extensions:jpg,jpeg,png,webp|max:4096|dimensions:max_width=4096,max_height=4096',
+            'images' => 'nullable|array',
+            'images.*' => 'image|mimes:jpeg,png,jpg,webp|extensions:jpg,jpeg,png,webp|max:4096|dimensions:max_width=4096,max_height=4096',
+            'image_zones' => 'nullable|array',
+            'image_zones.*' => 'required|in:2d,3d,proses',
         ];
     }
 
@@ -41,18 +39,22 @@ class StoreCalculatorOptionRequest extends FormRequest
         return [
             function (Validator $validator) {
                 $existingCount = 0;
-                
+
                 // Jika request ini adalah Update, hitung gambar yang sudah ada di DB
                 if ($calculator = $this->route('calculator')) {
                     $existingCount = $calculator->images()->count();
                 }
 
-                $newUploads = count($this->file('images_2d', []))
-                    + count($this->file('images_3d', []))
-                    + count($this->file('images_proses', []));
+                $newUploads = count($this->file('images', []));
 
                 if (($existingCount + $newUploads) > 10) {
-                    $validator->errors()->add('images_2d', 'Total gallery images (existing + new uploads) may not exceed 10 photos.');
+                    $validator->errors()->add('images', 'Total gallery images (existing + new uploads) may not exceed 10 photos.');
+                }
+
+                $zones = $this->input('image_zones', []);
+
+                if (! is_array($zones) || $newUploads !== count($zones)) {
+                    $validator->errors()->add('image_zones', 'Each image must have a valid zone.');
                 }
             },
         ];
@@ -61,12 +63,8 @@ class StoreCalculatorOptionRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'images_2d.*.max' => 'Each 2D image may not be greater than 4 MB.',
-            'images_3d.*.max' => 'Each 3D image may not be greater than 4 MB.',
-            'images_proses.*.max' => 'Each process image may not be greater than 4 MB.',
-            'images_2d.*.mimes' => '2D image format must be JPG, PNG, or WEBP.',
-            'images_3d.*.mimes' => '3D image format must be JPG, PNG, or WEBP.',
-            'images_proses.*.mimes' => 'Process image format must be JPG, PNG, or WEBP.',
+            'images.*.max' => 'Each image may not be greater than 4 MB.',
+            'images.*.mimes' => 'Image format must be JPG, PNG, or WEBP.',
         ];
     }
 }

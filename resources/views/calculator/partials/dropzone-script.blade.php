@@ -6,6 +6,23 @@
         const maxTotal = 10;
 
         const zones = Array.from(document.querySelectorAll('.calc-dropzone'));
+        const form = zones[0]?.closest('form');
+
+        form?.addEventListener('submit', () => {
+            form.querySelectorAll('.calc-zone-field').forEach(field => field.remove());
+
+            zones.forEach(zone => {
+                const files = zone.querySelector('.calc-file-input').files ?? [];
+                Array.from(files).forEach(() => {
+                    const field = document.createElement('input');
+                    field.type = 'hidden';
+                    field.name = 'image_zones[]';
+                    field.value = zone.dataset.zone;
+                    field.className = 'calc-zone-field';
+                    form.appendChild(field);
+                });
+            });
+        });
 
         const totalSelected = () => zones.reduce((sum, z) => {
             const input = z.querySelector('.calc-file-input');
