@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Controllers\CalculatorOptionController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\PublicCalculatorController;
 use App\Http\Controllers\PublicProjectController;
 use App\Http\Controllers\RoutingController;
 use App\Http\Controllers\SettingController;
@@ -17,6 +19,9 @@ Route::get('/', function () {
 
 Route::get('/projects', [PublicProjectController::class, 'index'])->name('public.projects.index');
 Route::get('/case-study/{slug}', [PublicProjectController::class, 'show'])->name('public.projects.show');
+
+// Public pricing calculator — WAJIB di atas grup catch-all {any} agar tidak tertangkap auth middleware.
+Route::get('/pricing-calculator', [PublicCalculatorController::class, 'index'])->name('public.calculator.index');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::redirect('/admin', '/dashboard');
@@ -41,6 +46,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->parameters(['projects' => 'project'])
         ->middleware(['throttle:30,1']);
     Route::resource('categories', CategoryController::class)
+        ->middleware(['throttle:30,1']);
+
+    // Calculator: hapus 1 gambar spesifik dari opsi
+    Route::delete('manage/calculator/{calculator}/image/{image}', [CalculatorOptionController::class, 'deleteImage'])
+        ->middleware('throttle:30,1')
+        ->name('calculator.image.delete');
+    Route::resource('manage/calculator', CalculatorOptionController::class)
+        ->except(['show'])
+        ->names('calculator')
+        ->parameters(['calculator' => 'calculator'])
         ->middleware(['throttle:30,1']);
     Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
     Route::post('/settings', [SettingController::class, 'update'])
