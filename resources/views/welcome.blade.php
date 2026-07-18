@@ -114,17 +114,6 @@
             box-shadow: 0 8px 32px 0 rgba(20, 27, 35, 0.05);
         }
 
-        .reveal-on-scroll {
-            opacity: 0;
-            transform: translateY(30px);
-            transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .reveal-on-scroll.is-visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
         .text-gradient {
             background-clip: text;
             -webkit-background-clip: text;
@@ -132,6 +121,7 @@
             background-image: linear-gradient(90deg, #055305, #128B12);
         }
     </style>
+    @include('partials.public-animations')
 </head>
 
 <body
@@ -164,6 +154,8 @@
                         href="#services">Services</a>
                     <a class="nav-link-desktop text-sm font-medium text-muted hover:text-primary transition-colors border-b-2 border-transparent pb-1"
                         href="#projects">Projects</a>
+                    <a class="nav-link-desktop text-sm font-medium text-muted hover:text-primary transition-colors border-b-2 border-transparent pb-1"
+                        href="{{ route('public.calculator.index') }}">Price Calculator</a>
                 </nav>
 
                 <div class="hidden md:flex items-center gap-4">
@@ -192,6 +184,7 @@
                 <a href="#about" class="nav-link-mobile text-muted font-medium hover:text-primary transition-colors">About Us</a>
                 <a href="#services" class="nav-link-mobile text-muted font-medium hover:text-primary transition-colors">Services</a>
                 <a href="#projects" class="nav-link-mobile text-muted font-medium hover:text-primary transition-colors">Projects</a>
+                <a href="{{ route('public.calculator.index') }}" class="nav-link-mobile text-muted font-medium hover:text-primary transition-colors">Price Calculator</a>
                 <a href="https://wa.me/{{ format_wa_number(setting('contact_whatsapp', '628123456789')) }}?text=Hello%20PT%20Sistem%20Jaya%20Abadi,%20I%20would%20like%20to%20inquire%20about%20your%20services."
                     class="bg-secondary text-white text-center py-3 rounded-xl font-semibold">
                     Let's Talk
@@ -520,6 +513,8 @@
                                 class="text-sm text-muted hover:text-secondary transition-colors">Services</a></li>
                         <li><a href="{{ url('/') }}#projects"
                                 class="text-sm text-muted hover:text-secondary transition-colors">Projects</a></li>
+                        <li><a href="{{ route('public.calculator.index') }}"
+                                class="text-sm text-muted hover:text-secondary transition-colors">Price Calculator</a></li>
                     </ul>
                 </div>
 
@@ -590,36 +585,9 @@
         </div>
     </footer>
 
-    <!-- Reveal Script -->
+    <!-- Active Navbar Link Script -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('is-visible');
-                    }
-                });
-            }, {
-                threshold: 0.1
-            });
-
-            document.querySelectorAll('.reveal-on-scroll').forEach((el) => {
-                observer.observe(el);
-            });
-
-            // Navbar blur on scroll
-            window.addEventListener('scroll', () => {
-                const nav = document.getElementById('navbar');
-                if (window.scrollY > 20) {
-                    nav.classList.add('py-2');
-                    nav.classList.remove('mt-4');
-                } else {
-                    nav.classList.remove('py-2');
-                    nav.classList.add('mt-4');
-                }
-            });
-
-            // Active Navbar Link based on Scroll Section
             const sections = document.querySelectorAll('section[id]');
             const desktopLinks = document.querySelectorAll('.nav-link-desktop');
             const mobileLinks = document.querySelectorAll('.nav-link-mobile');

@@ -51,6 +51,12 @@
                         <div class="menu-text">Categories</div>
                     </a>
                 </li>
+                <li class="menu-item">
+                    <a class="menu-link" href="{{ route('calculator.index') }}">
+                        <span class="menu-icon"><i data-lucide="calculator"></i></span>
+                        <div class="menu-text">Price Calculator</div>
+                    </a>
+                </li>
 
                 <li class="menu-title">
                     <span>System</span>

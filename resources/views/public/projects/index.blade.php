@@ -81,18 +81,8 @@
             border: 1px solid rgba(255, 255, 255, 0.5);
             box-shadow: 0 8px 32px 0 rgba(20, 27, 35, 0.05);
         }
-
-        .reveal-on-scroll {
-            opacity: 0;
-            transform: translateY(30px);
-            transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .reveal-on-scroll.is-visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
     </style>
+    @include('partials.public-animations')
 </head>
 
 <body
@@ -246,8 +236,8 @@
                                 : asset('storage/projects/' . $project->image)));
                 @endphp
                 <a href="{{ route('public.projects.show', $project->slug) }}"
-                    class="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 block animate-reveal-up"
-                    style="animation-delay: {{ $loop->index * 50 }}ms;">
+                    class="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 block reveal-on-scroll"
+                    data-reveal-delay="{{ $loop->index * 80 }}">
                     <div class="relative h-56 overflow-hidden">
                         <img src="{{ $imagePath }}" alt="{{ $project->title }}"
                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
@@ -277,7 +267,7 @@
                 </a>
             @empty
                 <div
-                    class="col-span-1 md:col-span-2 lg:col-span-3 py-20 text-center glass-panel rounded-3xl animate-reveal-up">
+                    class="col-span-1 md:col-span-2 lg:col-span-3 py-20 text-center glass-panel rounded-3xl reveal-on-scroll">
                     <div
                         class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center text-muted mx-auto mb-4 border border-gray-100">
                         <span class="material-symbols-outlined text-4xl">search_off</span>
@@ -411,35 +401,6 @@
         </div>
     </footer>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('is-visible');
-                    }
-                });
-            }, {
-                threshold: 0.1
-            });
-
-            document.querySelectorAll('.reveal-on-scroll').forEach((el) => {
-                observer.observe(el);
-            });
-
-            // Navbar blur on scroll
-            window.addEventListener('scroll', () => {
-                const nav = document.getElementById('navbar');
-                if (window.scrollY > 20) {
-                    nav.classList.add('py-2');
-                    nav.classList.remove('mt-4');
-                } else {
-                    nav.classList.remove('py-2');
-                    nav.classList.add('mt-4');
-                }
-            });
-        });
-    </script>
 </body>
 
 </html>

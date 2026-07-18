@@ -52,18 +52,9 @@
                         glow: "0 0 20px rgba(219, 89, 22, 0.3)",
                     },
                     animation: {
-                        'float': 'float 6s ease-in-out infinite',
                         'reveal-up': 'revealUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards',
                     },
                     keyframes: {
-                        float: {
-                            '0%, 100%': {
-                                transform: 'translateY(0)'
-                            },
-                            '50%': {
-                                transform: 'translateY(-10px)'
-                            },
-                        },
                         revealUp: {
                             '0%': {
                                 opacity: '0',
@@ -105,17 +96,6 @@
             box-shadow: 0 8px 32px 0 rgba(20, 27, 35, 0.05);
         }
 
-        .reveal-on-scroll {
-            opacity: 0;
-            transform: translateY(30px);
-            transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .reveal-on-scroll.is-visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
         .text-gradient {
             background-clip: text;
             -webkit-background-clip: text;
@@ -123,6 +103,7 @@
             background-image: linear-gradient(90deg, #141B23, #4A5568);
         }
     </style>
+    @include('partials.public-animations')
 </head>
 
 <body
@@ -295,7 +276,7 @@
             </div>
 
             <!-- Right: Metadata & CTA -->
-            <div class="space-y-8 reveal-on-scroll" style="animation-delay: 150ms;">
+            <div class="space-y-8 reveal-on-scroll" data-reveal-delay="150">
 
                 <div
                     class="bg-primary text-white rounded-3xl p-8 shadow-2xl border border-white/10 space-y-6 relative overflow-hidden">
@@ -369,7 +350,7 @@
 
                 <!-- Investment Promosi (Jika diaktifkan) -->
                 @if ($project->is_for_sale_or_rent)
-                    <div class="glass-panel rounded-3xl p-8 border border-success/10 shadow-glass relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+                    <div class="glass-panel rounded-3xl p-8 border border-success/10 shadow-glass relative overflow-hidden">
                         <div class="absolute -top-16 -right-16 w-40 h-40 bg-success/10 blur-3xl rounded-full pointer-events-none"></div>
 
                         <div class="flex items-start gap-4 mb-6 relative z-10">
@@ -736,33 +717,6 @@
             }
         });
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('is-visible');
-                    }
-                });
-            }, {
-                threshold: 0.1
-            });
-
-            document.querySelectorAll('.reveal-on-scroll').forEach((el) => {
-                observer.observe(el);
-            });
-
-            // Navbar blur on scroll
-            window.addEventListener('scroll', () => {
-                const nav = document.getElementById('navbar');
-                if (window.scrollY > 20) {
-                    nav.classList.add('py-2');
-                    nav.classList.remove('mt-4');
-                } else {
-                    nav.classList.remove('py-2');
-                    nav.classList.add('mt-4');
-                }
-            });
-        });
     </script>
 </body>
 
