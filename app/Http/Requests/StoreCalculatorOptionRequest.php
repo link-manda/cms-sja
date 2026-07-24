@@ -23,7 +23,7 @@ class StoreCalculatorOptionRequest extends FormRequest
             'price_range' => 'required|string|max:255',
             'description' => 'required|string',
             'images' => 'nullable|array',
-            'images.*' => 'image|mimes:jpeg,png,jpg,webp|extensions:jpg,jpeg,png,webp|max:4096|dimensions:max_width=4096,max_height=4096',
+            'images.*' => 'image|mimes:jpeg,png,jpg,webp|extensions:jpg,jpeg,png,webp|max:4096',
             'image_zones' => 'nullable|array',
             'image_zones.*' => 'required|in:2d,3d,proses',
         ];

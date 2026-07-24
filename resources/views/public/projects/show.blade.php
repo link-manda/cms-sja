@@ -134,6 +134,8 @@
                         href="{{ url('/') }}#services">Services</a>
                     <a class="text-sm font-semibold text-primary border-b-2 border-secondary pb-1"
                         href="{{ route('public.projects.index') }}">Projects</a>
+                    <a class="text-sm font-medium text-muted hover:text-primary transition-colors pb-1"
+                        href="{{ route('public.calculator.index') }}">Price Calculator</a>
                 </nav>
 
                 <div class="hidden md:flex items-center gap-4">
@@ -161,6 +163,7 @@
                 <a href="{{ url('/') }}#about" class="text-muted font-medium">About Us</a>
                 <a href="{{ url('/') }}#services" class="text-muted font-medium">Services</a>
                 <a href="{{ route('public.projects.index') }}" class="text-primary font-medium">Projects</a>
+                <a href="{{ route('public.calculator.index') }}" class="text-muted font-medium">Price Calculator</a>
                 <a href="https://wa.me/{{ format_wa_number(setting('contact_whatsapp', '628123456789')) }}?text=Hello%20PT%20Sistem%20Jaya%20Abadi,%20I%20would%20like%20to%20inquire%20about%20your%20services."
                     class="bg-secondary text-white text-center py-3 rounded-xl font-semibold">
                     Let's Talk
@@ -493,6 +496,8 @@
                                 class="text-sm text-muted hover:text-secondary transition-colors">Services</a></li>
                         <li><a href="{{ route('public.projects.index') }}"
                                 class="text-sm text-muted hover:text-secondary transition-colors">Projects</a></li>
+                        <li><a href="{{ route('public.calculator.index') }}"
+                                class="text-sm text-muted hover:text-secondary transition-colors">Price Calculator</a></li>
                     </ul>
                 </div>
 

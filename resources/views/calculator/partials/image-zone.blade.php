@@ -17,6 +17,4 @@
     </div>
     <div id="preview-{{ $zone }}" class="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-3 hidden"></div>
     <div id="errors-{{ $zone }}" class="mt-2 bg-danger/10 text-danger border border-danger/20 rounded p-2 text-xs hidden"></div>
-
-    <x-input-error :messages="$errors->get('images.*')" class="mt-2" />
 </div>

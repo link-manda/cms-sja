@@ -35,6 +35,7 @@
             const errorBox = document.getElementById(zone.dataset.errors);
 
             const showErrors = (messages) => {
+                if (!errorBox) return;
                 errorBox.innerHTML = '';
                 messages.forEach(m => {
                     const p = document.createElement('p');
@@ -44,7 +45,11 @@
                 });
                 errorBox.classList.remove('hidden');
             };
-            const clearErrors = () => { errorBox.innerHTML = ''; errorBox.classList.add('hidden'); };
+            const clearErrors = () => {
+                if (!errorBox) return;
+                errorBox.innerHTML = '';
+                errorBox.classList.add('hidden');
+            };
 
             const validate = (files) => {
                 const errors = [];

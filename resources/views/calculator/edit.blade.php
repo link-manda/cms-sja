@@ -52,9 +52,7 @@
                         @include('calculator.partials.image-zone', ['zone' => '3d', 'label' => '3D Design'])
                         @include('calculator.partials.image-zone', ['zone' => 'proses', 'label' => 'Construction Process'])
                     </div>
-                    @if ($errors->hasAny(['images', 'image_zones']))
-                        <p class="text-sm text-danger mt-2 flex items-center gap-1"><i class="size-4" data-lucide="alert-circle"></i> {{ $errors->first('images') ?: $errors->first('image_zones') }}</p>
-                    @endif
+                    <x-input-error :messages="array_merge((array)$errors->get('images'), (array)$errors->get('images.*'), (array)$errors->get('image_zones'))" class="mt-3" />
                 </div>
 
                 <div class="flex justify-end gap-3 pt-4 border-t border-default-200">
