@@ -163,7 +163,7 @@ class ProjectGalleryTest extends TestCase
             ->assertSessionHasErrors(['gallery_images.0' => 'Gallery photo extension must be .jpg, .jpeg, .png, or .webp.']);
     }
 
-    public function test_gallery_upload_rejects_files_larger_than_four_mb(): void
+    public function test_gallery_upload_rejects_files_larger_than_ten_mb(): void
     {
         Storage::fake('public');
 
@@ -177,12 +177,12 @@ class ProjectGalleryTest extends TestCase
             'description' => 'Project with large gallery image.',
             'image' => UploadedFile::fake()->image('main.jpg'),
             'status' => 'Ongoing',
-            'gallery_images' => [UploadedFile::fake()->image('large.jpg')->size(4097)],
+            'gallery_images' => [UploadedFile::fake()->image('large.jpg')->size(10241)],
         ]);
 
         $response
             ->assertRedirect(route('projects.create'))
-            ->assertSessionHasErrors(['gallery_images.0' => 'Each gallery photo may not be greater than 4 MB.']);
+            ->assertSessionHasErrors(['gallery_images.0' => 'Each gallery photo may not be greater than 10 MB.']);
     }
 
     public function test_gallery_upload_has_clear_message_when_php_upload_limit_rejects_file(): void
@@ -207,7 +207,7 @@ class ProjectGalleryTest extends TestCase
 
         $response
             ->assertRedirect(route('projects.create'))
-            ->assertSessionHasErrors(['gallery_images.0' => 'Gallery photo failed to upload. Each gallery photo may not be greater than 4 MB and the server upload limit must allow 4 MB files.']);
+            ->assertSessionHasErrors(['gallery_images.0' => 'Gallery photo failed to upload. Each gallery photo may not be greater than 10 MB and the server upload limit must allow 10 MB files.']);
     }
 
     public function test_public_project_case_study_shows_gallery_carousel_images(): void
