@@ -2,10 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
 class SettingCrudTest extends TestCase
@@ -53,7 +51,7 @@ class SettingCrudTest extends TestCase
         $response->assertRedirect('/login');
 
         $response = $this->post('/settings', [
-            'contact_whatsapp' => '123'
+            'contact_whatsapp' => '123',
         ]);
         $response->assertRedirect('/login');
     }

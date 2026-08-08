@@ -33,9 +33,9 @@ class ProjectFactory extends Factory
             'meta_description' => $this->faker->sentence(10),
             'client' => $this->faker->company,
             'year' => (string) $this->faker->year,
-            'building_area' => $this->faker->numberBetween(100, 1000) . ' sqm',
-            'land_area' => $this->faker->numberBetween(200, 2000) . ' sqm',
-            'execution_team' => 'SJA ' . $this->faker->word . ' Team',
+            'building_area' => $this->faker->numberBetween(100, 1000).' sqm',
+            'land_area' => $this->faker->numberBetween(200, 2000).' sqm',
+            'execution_team' => 'SJA '.$this->faker->word.' Team',
         ];
     }
 }

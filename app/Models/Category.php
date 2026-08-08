@@ -17,8 +17,6 @@ class Category extends Model
 
     /**
      * Get the projects for the category.
-     *
-     * @return HasMany
      */
     public function projects(): HasMany
     {

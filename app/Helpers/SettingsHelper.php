@@ -3,12 +3,11 @@
 use App\Models\Setting;
 use Illuminate\Support\Facades\Cache;
 
-if (!function_exists('setting')) {
+if (! function_exists('setting')) {
     /**
      * Get a setting value by key.
      *
-     * @param string $key
-     * @param mixed $default
+     * @param  mixed  $default
      * @return mixed
      */
     function setting(string $key, $default = null)
@@ -21,12 +20,9 @@ if (!function_exists('setting')) {
     }
 }
 
-if (!function_exists('format_wa_number')) {
+if (! function_exists('format_wa_number')) {
     /**
      * Format a phone number for WhatsApp link (e.g., 6281234567890).
-     *
-     * @param string|null $number
-     * @return string
      */
     function format_wa_number(?string $number): string
     {
@@ -39,7 +35,7 @@ if (!function_exists('format_wa_number')) {
 
         // If it starts with 0, replace with 62
         if (str_starts_with($number, '0')) {
-            $number = '62' . substr($number, 1);
+            $number = '62'.substr($number, 1);
         }
 
         return $number;

@@ -12,8 +12,6 @@ class CategoryController extends Controller
 {
     /**
      * Display a listing of the categories.
-     *
-     * @return View
      */
     public function index(): View
     {
@@ -24,8 +22,6 @@ class CategoryController extends Controller
 
     /**
      * Show the form for creating a new category.
-     *
-     * @return View
      */
     public function create(): View
     {
@@ -34,9 +30,6 @@ class CategoryController extends Controller
 
     /**
      * Store a newly created category in database.
-     *
-     * @param Request $request
-     * @return RedirectResponse
      */
     public function store(Request $request): RedirectResponse
     {
@@ -60,9 +53,6 @@ class CategoryController extends Controller
 
     /**
      * Show the form for editing the specified category.
-     *
-     * @param Category $category
-     * @return View
      */
     public function edit(Category $category): View
     {
@@ -71,16 +61,12 @@ class CategoryController extends Controller
 
     /**
      * Update the specified category in database.
-     *
-     * @param Request $request
-     * @param Category $category
-     * @return RedirectResponse
      */
     public function update(Request $request, Category $category): RedirectResponse
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'slug' => 'required|string|max:255|unique:categories,slug,' . $category->id . '|regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
+            'slug' => 'required|string|max:255|unique:categories,slug,'.$category->id.'|regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
         ]);
 
         $category->update($validated);
@@ -98,9 +84,6 @@ class CategoryController extends Controller
 
     /**
      * Remove the specified category from database.
-     *
-     * @param Category $category
-     * @return RedirectResponse
      */
     public function destroy(Category $category): RedirectResponse
     {

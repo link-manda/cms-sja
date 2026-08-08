@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Category;
 use App\Models\Project;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class PublicProjectController extends Controller
@@ -26,7 +28,7 @@ class PublicProjectController extends Controller
     /**
      * Display a listing of all projects with filters.
      */
-    public function index(\Illuminate\Http\Request $request): View
+    public function index(Request $request): View
     {
         $query = Project::query();
 
@@ -39,14 +41,14 @@ class PublicProjectController extends Controller
         }
 
         if ($request->filled('province')) {
-            $query->where('location', 'like', '%' . $request->province . '%');
+            $query->where('location', 'like', '%'.$request->province.'%');
         }
 
         $projects = $query->latest()->paginate(9)->withQueryString();
 
-        $categories = \App\Models\Category::all();
-        
-        // Extract distinct locations/provinces to build a dropdown. 
+        $categories = Category::all();
+
+        // Extract distinct locations/provinces to build a dropdown.
         // Note: Assumes location field holds values like "Bali", "Jakarta"
         $provinces = Project::select('location')->distinct()->whereNotNull('location')->pluck('location');
 

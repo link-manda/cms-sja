@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Rules\Turnstile;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -30,7 +31,7 @@ class LoginRequest extends FormRequest
         return [
             'email' => ['required', 'string', 'email', 'lowercase', 'max:255'],
             'password' => ['required', 'string', 'max:255'],
-            'cf-turnstile-response' => ['required', new \App\Rules\Turnstile],
+            'cf-turnstile-response' => ['required', new Turnstile],
         ];
     }
 

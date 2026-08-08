@@ -7,15 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-
 class Project extends Model
 {
     use HasFactory, SoftDeletes;
 
     /**
      * Get the category that owns the project.
-     *
-     * @return BelongsTo
      */
     public function category(): BelongsTo
     {
@@ -26,6 +23,7 @@ class Project extends Model
     {
         return $this->hasMany(ProjectImage::class);
     }
+
     protected $fillable = [
         'category_id',
         'title',

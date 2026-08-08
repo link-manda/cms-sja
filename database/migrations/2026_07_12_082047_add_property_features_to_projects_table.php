@@ -36,7 +36,7 @@ return new class extends Migration
                 'is_for_sale_or_rent',
                 'property_type',
                 'price',
-                'roi_estimation'
+                'roi_estimation',
             ]);
         });
     }

@@ -12,8 +12,6 @@ class SettingController extends Controller
 {
     /**
      * Display the settings form.
-     *
-     * @return View
      */
     public function index(): View
     {
@@ -27,9 +25,6 @@ class SettingController extends Controller
 
     /**
      * Update the settings in database.
-     *
-     * @param Request $request
-     * @return RedirectResponse
      */
     public function update(Request $request): RedirectResponse
     {

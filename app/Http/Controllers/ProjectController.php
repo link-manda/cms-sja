@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreProjectRequest;
 use App\Http\Requests\UpdateProjectRequest;
+use App\Models\Category;
 use App\Models\Project;
 use App\Services\ProjectService;
 use Illuminate\Http\RedirectResponse;
@@ -41,7 +42,7 @@ class ProjectController extends Controller
      */
     public function create()
     {
-        $categories = \App\Models\Category::orderBy('name')->get();
+        $categories = Category::orderBy('name')->get();
 
         return view('projects.create', compact('categories'));
     }
@@ -80,7 +81,7 @@ class ProjectController extends Controller
      */
     public function edit(Project $project)
     {
-        $categories = \App\Models\Category::orderBy('name')->get();
+        $categories = Category::orderBy('name')->get();
 
         return view('projects.edit', compact('project', 'categories'));
     }
@@ -162,8 +163,6 @@ class ProjectController extends Controller
 
     /**
      * Menghapus 1 gambar spesifik dari galeri.
-     *
-     * @return RedirectResponse
      */
     public function deleteGalleryImage(Project $project, int $image): RedirectResponse
     {

@@ -48,7 +48,7 @@ class RoutingController extends Controller
 
     public function root(Request $request, $first)
     {
-        if (!in_array($first, self::ALLOWED_VIEW_NAMESPACES)) {
+        if (! in_array($first, self::ALLOWED_VIEW_NAMESPACES)) {
             abort(404);
         }
 
@@ -57,7 +57,7 @@ class RoutingController extends Controller
 
     public function secondLevel(Request $request, $first, $second)
     {
-        if (!in_array($first, self::ALLOWED_VIEW_NAMESPACES)) {
+        if (! in_array($first, self::ALLOWED_VIEW_NAMESPACES)) {
             abort(404);
         }
 
@@ -66,7 +66,7 @@ class RoutingController extends Controller
 
     public function thirdLevel(Request $request, $first, $second, $third)
     {
-        if (!in_array($first, self::ALLOWED_VIEW_NAMESPACES)) {
+        if (! in_array($first, self::ALLOWED_VIEW_NAMESPACES)) {
             abort(404);
         }
 
