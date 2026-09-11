@@ -14,7 +14,7 @@ class PublicProjectController extends Controller
      */
     public function show(string $slug): View
     {
-        $project = Project::where('slug', $slug)->firstOrFail();
+        $project = Project::where('slug', $slug)->with('images')->firstOrFail();
 
         // Fetch related projects (excluding current) to display in the bottom section
         $relatedProjects = Project::where('id', '!=', $project->id)
@@ -22,7 +22,33 @@ class PublicProjectController extends Controller
             ->take(3)
             ->get();
 
-        return view('public.projects.show', compact('project', 'relatedProjects'));
+        $imagePath = str_starts_with($project->image, 'http')
+            ? $project->image
+            : (file_exists(public_path('assets/'.$project->image))
+                ? asset('assets/'.$project->image)
+                : (str_starts_with($project->image, 'projects/')
+                    ? asset('storage/'.$project->image)
+                    : asset('storage/projects/'.$project->image)));
+
+        $allMediaItems = [
+            [
+                'type' => 'image',
+                'src' => $imagePath,
+                'embedUrl' => null,
+                'thumb' => $imagePath,
+            ],
+        ];
+
+        foreach ($project->images as $img) {
+            $allMediaItems[] = [
+                'type' => $img->type ?? 'image',
+                'src' => ($img->type === 'video') ? $img->embed_url : asset('storage/'.$img->image_path),
+                'embedUrl' => ($img->type === 'video') ? $img->embed_url : null,
+                'thumb' => ($img->type === 'video') ? $img->thumbnail_url : asset('storage/'.$img->image_path),
+            ];
+        }
+
+        return view('public.projects.show', compact('project', 'relatedProjects', 'allMediaItems'));
     }
 
     /**

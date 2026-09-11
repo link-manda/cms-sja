@@ -17,7 +17,7 @@ use Throwable;
 class ProjectService
 {
     /**
-     * Menyimpan project baru ke dalam database beserta file gambarnya.
+     * Menyimpan project baru ke dalam database beserta file gambarnya dan video URLs.
      */
     public function createProject(array $data): Project
     {
@@ -28,23 +28,24 @@ class ProjectService
         }
 
         $galleryImages = $data['gallery_images'] ?? [];
-        unset($data['gallery_images']);
+        $galleryVideos = $data['gallery_videos'] ?? [];
+        unset($data['gallery_images'], $data['gallery_videos']);
 
-        return DB::transaction(function () use ($data, $galleryImages) {
+        return DB::transaction(function () use ($data, $galleryImages, $galleryVideos) {
             $project = Project::create($data);
-            $this->storeGalleryImages($project, $galleryImages);
+            $this->storeGalleryMedia($project, $galleryImages, $galleryVideos);
 
             return $project;
         });
     }
 
     /**
-     * Memperbarui data project beserta file gambarnya (jika di-upload yang baru).
+     * Memperbarui data project beserta file gambarnya (jika di-upload yang baru) dan video URLs.
      */
     public function updateProject(Project $project, array $data): bool
     {
         if (isset($data['image']) && $data['image'] instanceof UploadedFile) {
-            if ($project->image) {
+            if ($project->image && Storage::disk('public')->exists('projects/'.$project->image)) {
                 Storage::disk('public')->delete('projects/'.$project->image);
             }
 
@@ -56,21 +57,23 @@ class ProjectService
         }
 
         $galleryImages = $data['gallery_images'] ?? [];
-        unset($data['gallery_images']);
+        $galleryVideos = $data['gallery_videos'] ?? [];
+        unset($data['gallery_images'], $data['gallery_videos']);
 
-        return DB::transaction(function () use ($project, $data, $galleryImages) {
+        return DB::transaction(function () use ($project, $data, $galleryImages, $galleryVideos) {
             $updated = $project->update($data);
-            $this->storeGalleryImages($project, $galleryImages);
+            $this->storeGalleryMedia($project, $galleryImages, $galleryVideos);
 
             return $updated;
         });
     }
 
-    private function storeGalleryImages(Project $project, array $images): void
+    private function storeGalleryMedia(Project $project, array $images, array $videoUrls = []): void
     {
         $storedPaths = [];
 
         try {
+            // 1. Process uploaded image files
             foreach ($images as $image) {
                 if (! $image instanceof UploadedFile) {
                     continue;
@@ -85,10 +88,30 @@ class ProjectService
 
                 $storedPaths[] = $path;
 
-                $project->images()->create(['image_path' => $path]);
+                $project->images()->create([
+                    'type' => 'image',
+                    'image_path' => $path,
+                    'video_url' => null,
+                ]);
+            }
+
+            // 2. Process video URLs (filter empty/whitespace)
+            foreach ($videoUrls as $videoUrl) {
+                $videoUrl = is_string($videoUrl) ? trim($videoUrl) : '';
+                if (empty($videoUrl)) {
+                    continue;
+                }
+
+                $project->images()->create([
+                    'type' => 'video',
+                    'image_path' => null,
+                    'video_url' => $videoUrl,
+                ]);
             }
         } catch (Throwable $exception) {
-            Storage::disk('public')->delete($storedPaths);
+            if (! empty($storedPaths)) {
+                Storage::disk('public')->delete($storedPaths);
+            }
 
             throw $exception;
         }
@@ -98,8 +121,10 @@ class ProjectService
     {
         $image = $project->images()->findOrFail($imageId);
 
-        if (Storage::disk('public')->exists($image->image_path) && ! Storage::disk('public')->delete($image->image_path)) {
-            return false;
+        if ($image->type === 'image' && ! empty($image->image_path) && Storage::disk('public')->exists($image->image_path)) {
+            if (! Storage::disk('public')->delete($image->image_path)) {
+                return false;
+            }
         }
 
         return (bool) $image->delete();
@@ -120,13 +145,15 @@ class ProjectService
     public function forceDeleteProject(Project $project): ?bool
     {
         // Hapus file gambar utama dari disk
-        if ($project->image) {
+        if ($project->image && Storage::disk('public')->exists('projects/'.$project->image)) {
             Storage::disk('public')->delete('projects/'.$project->image);
         }
 
-        // Hapus file gambar galeri dari disk
+        // Hapus file gambar galeri dari disk (hanya untuk tipe image dengan image_path valid)
         foreach ($project->images as $galleryImage) {
-            Storage::disk('public')->delete($galleryImage->image_path);
+            if ($galleryImage->type === 'image' && ! empty($galleryImage->image_path) && Storage::disk('public')->exists($galleryImage->image_path)) {
+                Storage::disk('public')->delete($galleryImage->image_path);
+            }
         }
 
         // Hapus record gallery (jika cascade on delete belum diset di database)

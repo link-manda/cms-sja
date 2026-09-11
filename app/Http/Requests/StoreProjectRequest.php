@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class StoreProjectRequest extends FormRequest
 {
@@ -43,6 +44,8 @@ class StoreProjectRequest extends FormRequest
             'roi_estimation' => 'nullable|string',
             'gallery_images' => 'nullable|array|max:10',
             'gallery_images.*' => 'image|mimes:jpeg,png,jpg,webp|extensions:jpg,jpeg,png,webp|max:10240',
+            'gallery_videos' => 'nullable|array',
+            'gallery_videos.*' => ['nullable', 'string', 'url', 'regex:/^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/i'],
         ];
     }
 
@@ -60,6 +63,20 @@ class StoreProjectRequest extends FormRequest
             'gallery_images.*.mimes' => 'Gallery photo format must be JPG, PNG, or WEBP.',
             'gallery_images.*.extensions' => 'Gallery photo extension must be .jpg, .jpeg, .png, or .webp.',
             'gallery_images.*.max' => 'Each gallery photo may not be greater than 10 MB.',
+            'gallery_videos.*.url' => 'Video link must be a valid URL.',
+            'gallery_videos.*.regex' => 'Video link must be a valid YouTube URL (e.g. youtube.com/watch?v=... or youtu.be/...).',
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            $uploadedImages = $this->file('gallery_images', []);
+            $videoUrls = array_filter($this->input('gallery_videos', []), fn ($v) => ! empty(trim((string) $v)));
+
+            if (count($uploadedImages) + count($videoUrls) > 10) {
+                $validator->errors()->add('gallery_images', 'Gallery may not contain more than 10 total items (photos and videos combined).');
+            }
+        });
     }
 }

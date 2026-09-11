@@ -46,6 +46,8 @@ class UpdateProjectRequest extends FormRequest
             'roi_estimation' => 'nullable|string',
             'gallery_images' => 'nullable|array|max:10',
             'gallery_images.*' => 'image|mimes:jpeg,png,jpg,webp|extensions:jpg,jpeg,png,webp|max:10240',
+            'gallery_videos' => 'nullable|array',
+            'gallery_videos.*' => ['nullable', 'string', 'url', 'regex:/^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/i'],
         ];
     }
 
@@ -63,6 +65,8 @@ class UpdateProjectRequest extends FormRequest
             'gallery_images.*.mimes' => 'Gallery photo format must be JPG, PNG, or WEBP.',
             'gallery_images.*.extensions' => 'Gallery photo extension must be .jpg, .jpeg, .png, or .webp.',
             'gallery_images.*.max' => 'Each gallery photo may not be greater than 10 MB.',
+            'gallery_videos.*.url' => 'Video link must be a valid URL.',
+            'gallery_videos.*.regex' => 'Video link must be a valid YouTube URL (e.g. youtube.com/watch?v=... or youtu.be/...).',
         ];
     }
 
@@ -71,13 +75,21 @@ class UpdateProjectRequest extends FormRequest
         $validator->after(function (Validator $validator) {
             $project = $this->route('project');
             $uploadedImages = $this->file('gallery_images', []);
+            $videoUrls = array_filter($this->input('gallery_videos', []), fn ($v) => ! empty(trim((string) $v)));
 
-            if (! is_object($project) || empty($uploadedImages)) {
+            if (! is_object($project)) {
                 return;
             }
 
-            if ($project->images()->count() + count($uploadedImages) > 10) {
-                $validator->errors()->add('gallery_images', 'Gallery may not contain more than 10 photos per project.');
+            $currentCount = $project->images()->count();
+            $newCount = count($uploadedImages) + count($videoUrls);
+
+            if ($currentCount + $newCount > 10) {
+                if (count($videoUrls) > 0) {
+                    $validator->errors()->add('gallery_images', "Gallery may not contain more than 10 total items (photos and videos combined) per project. Currently has {$currentCount} items.");
+                } else {
+                    $validator->errors()->add('gallery_images', 'Gallery may not contain more than 10 photos per project.');
+                }
             }
         });
     }

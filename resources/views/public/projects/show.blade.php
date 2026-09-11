@@ -70,67 +70,108 @@
         </div>
 
         @php
-            $imagePath = str_starts_with($project->image, 'http')
-                ? $project->image
-                : (file_exists(public_path('assets/' . $project->image))
-                    ? asset('assets/' . $project->image)
-                    : (str_starts_with($project->image, 'projects/')
-                        ? asset('storage/' . $project->image)
-                        : asset('storage/projects/' . $project->image)));
+            if (!isset($allMediaItems)) {
+                $imagePath = str_starts_with($project->image, 'http')
+                    ? $project->image
+                    : (file_exists(public_path('assets/' . $project->image))
+                        ? asset('assets/' . $project->image)
+                        : (str_starts_with($project->image, 'projects/')
+                            ? asset('storage/' . $project->image)
+                            : asset('storage/projects/' . $project->image)));
 
-            $allImages = [$imagePath];
-            if ($project->images) {
-                foreach ($project->images as $img) {
-                    $allImages[] = asset('storage/' . $img->image_path);
+                $allMediaItems = [
+                    [
+                        'type' => 'image',
+                        'src' => $imagePath,
+                        'embedUrl' => null,
+                        'thumb' => $imagePath,
+                    ],
+                ];
+
+                if ($project->images) {
+                    foreach ($project->images as $img) {
+                        $allMediaItems[] = [
+                            'type' => $img->type ?? 'image',
+                            'src' => ($img->type === 'video') ? $img->embed_url : asset('storage/' . $img->image_path),
+                            'embedUrl' => ($img->type === 'video') ? $img->embed_url : null,
+                            'thumb' => ($img->type === 'video') ? $img->thumbnail_url : asset('storage/' . $img->image_path),
+                        ];
+                    }
                 }
             }
         @endphp
 
         <!-- 2. Master Gallery Carousel & Cinema Display -->
         <div class="mb-16 animate-reveal-up" style="animation-delay: 150ms;" id="project-carousel"
-            data-images="{{ json_encode($allImages) }}">
+            data-media="{{ json_encode($allMediaItems, JSON_UNESCAPED_SLASHES) }}"
+            data-images="{{ json_encode(array_column($allMediaItems, 'src'), JSON_UNESCAPED_SLASHES) }}">
             
             <!-- Main Cinema Frame -->
-            <div class="relative rounded-[2.5rem] overflow-hidden glass-card shadow-2xl border border-black/5 w-full aspect-video md:aspect-[21/9] bg-primary group">
-                <img id="main-carousel-img" src="{{ $allImages[0] }}" alt="{{ $project->title }}"
+            <div class="relative rounded-[2.5rem] overflow-hidden glass-card shadow-2xl border border-black/5 w-full aspect-video md:aspect-[21/9] bg-neutral-950 group">
+                
+                <!-- Main Image Element -->
+                <img id="main-carousel-img" src="{{ $allMediaItems[0]['src'] }}" alt="{{ $project->title }}"
                     class="w-full h-full object-cover transition-transform duration-700 ease-haptic cursor-pointer"
-                    onclick="openLightbox(this.src)" decoding="async">
+                    onclick="openLightbox(currentImageIndex)" decoding="async">
+
+                <!-- Main Video Element Container -->
+                <div id="main-video-container" class="hidden absolute inset-0 w-full h-full flex items-center justify-center bg-neutral-950 p-4 sm:p-8">
+                    <!-- Video Facade (Poster + Play Button) -->
+                    <div id="video-facade" class="relative w-full h-full max-w-5xl aspect-video mx-auto flex items-center justify-center cursor-pointer group/facade overflow-hidden rounded-2xl shadow-2xl border border-white/10" onclick="playCurrentVideo()">
+                        <img id="video-facade-thumb" src="" alt="Video thumbnail" class="w-full h-full object-cover group-hover/facade:scale-105 transition-transform duration-500">
+                        <div class="absolute inset-0 bg-black/40 group-hover/facade:bg-black/30 transition-colors flex items-center justify-center">
+                            <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-red-600/90 hover:bg-red-600 text-white flex items-center justify-center shadow-2xl group-hover/facade:scale-110 transition-all">
+                                <span class="material-symbols-outlined text-4xl sm:text-5xl ml-1">play_arrow</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Active Video Iframe Container -->
+                    <div id="video-iframe-wrapper" class="hidden w-full h-full max-w-5xl aspect-video mx-auto rounded-2xl overflow-hidden shadow-2xl border border-white/10 bg-black">
+                        <iframe id="main-video-iframe" class="w-full h-full" src="" title="Project Video" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                    </div>
+                </div>
 
                 <!-- Gradient Overlay -->
-                <div class="absolute inset-0 bg-gradient-to-t from-primary/60 via-transparent to-transparent opacity-60 pointer-events-none"></div>
+                <div id="cinema-gradient" class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 pointer-events-none"></div>
 
                 <!-- Status Pill on Cinema Frame -->
-                <div class="absolute top-6 right-6 glass-card px-4 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase border border-white/40 shadow-sm z-10 pointer-events-none {{ $project->status === 'Completed' ? 'text-emerald-400' : 'text-secondary' }}">
+                <div class="absolute top-6 right-6 glass-card px-4 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase border border-white/40 shadow-sm z-20 pointer-events-none {{ $project->status === 'Completed' ? 'text-emerald-400' : 'text-secondary' }}">
                     {{ $project->status }}
                 </div>
 
-                <!-- Click-to-Zoom Helper Pill -->
-                <div class="absolute bottom-6 left-6 glass-card px-3.5 py-1.5 rounded-full text-[10px] font-bold text-white tracking-wider uppercase border border-white/20 shadow-sm z-10 pointer-events-none hidden sm:flex items-center gap-1.5">
+                <!-- Fullscreen Cinema / Expand Button Overlay -->
+                <button type="button" onclick="openLightbox(currentImageIndex)" class="absolute bottom-6 left-6 glass-card px-3.5 py-1.5 rounded-full text-[10px] font-bold text-white tracking-wider uppercase border border-white/20 shadow-sm z-20 hover:bg-white/20 transition-all flex items-center gap-1.5 cursor-pointer">
                     <span class="material-symbols-outlined text-sm">fullscreen</span>
-                    <span>Click Image to Expand</span>
-                </div>
+                    <span id="expand-label">Click Image to Expand</span>
+                </button>
 
-                @if (count($allImages) > 1)
+                @if (count($allMediaItems) > 1)
                     <!-- Navigation Arrows -->
-                    <button onclick="prevImage(event)" aria-label="Previous image"
-                        class="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-secondary transition-all opacity-0 group-hover:opacity-100 z-10 border border-white/20 hover:scale-110 shadow-lg">
+                    <button onclick="prevImage(event)" aria-label="Previous media"
+                        class="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-md hover:bg-secondary transition-all opacity-0 group-hover:opacity-100 z-20 border border-white/20 hover:scale-110 shadow-lg cursor-pointer">
                         <span class="material-symbols-outlined text-3xl font-light">chevron_left</span>
                     </button>
-                    <button onclick="nextImage(event)" aria-label="Next image"
-                        class="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-secondary transition-all opacity-0 group-hover:opacity-100 z-10 border border-white/20 hover:scale-110 shadow-lg">
+                    <button onclick="nextImage(event)" aria-label="Next media"
+                        class="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-md hover:bg-secondary transition-all opacity-0 group-hover:opacity-100 z-20 border border-white/20 hover:scale-110 shadow-lg cursor-pointer">
                         <span class="material-symbols-outlined text-3xl font-light">chevron_right</span>
                     </button>
                 @endif
             </div>
 
             <!-- Carousel Thumbnails Strip -->
-            @if (count($allImages) > 1)
+            @if (count($allMediaItems) > 1)
                 <div class="flex gap-4 overflow-x-auto py-4 scrollbar-none mt-4 snap-x">
-                    @foreach ($allImages as $index => $img)
+                    @foreach ($allMediaItems as $index => $item)
                         <button onclick="setImage({{ $index }})" id="thumb-{{ $index }}"
-                            class="carousel-thumb snap-start relative flex-shrink-0 w-28 h-20 md:w-36 md:h-24 rounded-2xl overflow-hidden border-2 {{ $index === 0 ? 'border-secondary opacity-100 scale-100 shadow-md' : 'border-transparent opacity-50 hover:opacity-100 scale-95 hover:scale-100' }} transition-all duration-300">
-                            <img src="{{ $img }}" class="w-full h-full object-cover"
+                            class="carousel-thumb snap-start relative flex-shrink-0 w-28 h-20 md:w-36 md:h-24 rounded-2xl overflow-hidden border-2 {{ $index === 0 ? 'border-secondary opacity-100 scale-100 shadow-md' : 'border-transparent opacity-50 hover:opacity-100 scale-95 hover:scale-100' }} transition-all duration-300 cursor-pointer">
+                            <img src="{{ $item['thumb'] }}" class="w-full h-full object-cover"
                                 alt="{{ $project->title }} preview {{ $index + 1 }}" loading="lazy" decoding="async">
+                            @if ($item['type'] === 'video')
+                                <span class="absolute top-1.5 left-1.5 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-red-600 text-white rounded flex items-center gap-0.5 shadow pointer-events-none">
+                                    <span class="material-symbols-outlined text-[11px]">play_arrow</span>
+                                    VIDEO
+                                </span>
+                            @endif
                         </button>
                     @endforeach
                 </div>
@@ -352,23 +393,29 @@
 
     <!-- Custom Full-Screen Lightbox Modal -->
     <div id="gallery-lightbox"
-        class="fixed inset-0 z-[100] bg-primary/95 backdrop-blur-md hidden opacity-0 transition-opacity duration-300 flex items-center justify-center p-4 sm:p-10"
+        class="fixed inset-0 z-[100] bg-neutral-950/95 backdrop-blur-md hidden opacity-0 transition-opacity duration-300 flex items-center justify-center p-4 sm:p-10"
         onclick="closeLightbox(event)">
         <!-- Close Button -->
         <button type="button"
-            class="absolute top-6 right-6 sm:top-10 sm:right-10 text-white/60 hover:text-white transition-colors p-2.5 rounded-full hover:bg-white/10 z-[101]"
+            class="absolute top-6 right-6 sm:top-10 sm:right-10 text-white/70 hover:text-white transition-colors p-2.5 rounded-full hover:bg-white/10 z-[102] cursor-pointer"
             onclick="closeLightbox(event)" aria-label="Close fullscreen preview">
             <span class="material-symbols-outlined text-3xl font-light">close</span>
         </button>
 
-        <!-- Image Container -->
-        <div class="relative max-w-6xl w-full h-full flex items-center justify-center">
-            <div class="absolute inset-0 flex items-center justify-center">
+        <!-- Media Container -->
+        <div class="relative max-w-6xl w-full h-full flex items-center justify-center" onclick="event.stopPropagation()">
+            <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <span id="lightbox-loader"
                     class="material-symbols-outlined text-white/50 text-4xl animate-spin hidden">progress_activity</span>
             </div>
+            <!-- Fullscreen Image -->
             <img id="lightbox-image" src="" alt="Gallery Preview"
-                class="max-w-full max-h-full object-contain rounded-2xl shadow-2xl scale-95 opacity-0 transition-all duration-300 relative z-10">
+                class="hidden max-w-full max-h-full object-contain rounded-2xl shadow-2xl scale-95 opacity-0 transition-all duration-300 relative z-10">
+
+            <!-- Fullscreen Video Iframe Container -->
+            <div id="lightbox-video-container" class="hidden w-full max-w-5xl aspect-video rounded-2xl overflow-hidden shadow-2xl border border-white/10 relative z-10 bg-black">
+                <iframe id="lightbox-video-iframe" class="w-full h-full" src="" title="Fullscreen Project Video" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+            </div>
         </div>
     </div>
 
@@ -377,37 +424,100 @@
         let currentImageIndex = 0;
         let isTransitioning = false;
         const carouselEl = document.getElementById('project-carousel');
-        let galleryImages = [];
+        let allMediaItems = [];
+
         if (carouselEl) {
-            galleryImages = JSON.parse(carouselEl.getAttribute('data-images') || '[]');
+            try {
+                allMediaItems = JSON.parse(carouselEl.getAttribute('data-media') || '[]');
+            } catch (e) {
+                allMediaItems = [];
+            }
+            // Fallback to data-images if data-media is empty
+            if (allMediaItems.length === 0) {
+                const legacyImages = JSON.parse(carouselEl.getAttribute('data-images') || '[]');
+                allMediaItems = legacyImages.map(url => ({ type: 'image', src: url, embedUrl: null, thumb: url }));
+            }
+        }
+
+        function stopMainVideo() {
+            const mainVideoIframe = document.getElementById('main-video-iframe');
+            const videoIframeWrapper = document.getElementById('video-iframe-wrapper');
+            const videoFacade = document.getElementById('video-facade');
+
+            if (mainVideoIframe) mainVideoIframe.src = '';
+            if (videoIframeWrapper) videoIframeWrapper.classList.add('hidden');
+            if (videoFacade) videoFacade.classList.remove('hidden');
+        }
+
+        function playCurrentVideo() {
+            const media = allMediaItems[currentImageIndex];
+            if (!media || media.type !== 'video' || !media.embedUrl) return;
+
+            const videoFacade = document.getElementById('video-facade');
+            const videoIframeWrapper = document.getElementById('video-iframe-wrapper');
+            const mainVideoIframe = document.getElementById('main-video-iframe');
+
+            if (videoFacade) videoFacade.classList.add('hidden');
+            if (videoIframeWrapper) videoIframeWrapper.classList.remove('hidden');
+
+            const sep = media.embedUrl.includes('?') ? '&' : '?';
+            if (mainVideoIframe) {
+                mainVideoIframe.src = media.embedUrl + sep + 'autoplay=1';
+            }
         }
 
         function setImage(index) {
-            if (galleryImages.length === 0 || isTransitioning || index === currentImageIndex) return;
+            if (allMediaItems.length === 0 || isTransitioning || index === currentImageIndex) return;
 
+            // Always stop any playing video before switching slides to prevent audio leak
+            stopMainVideo();
+
+            const media = allMediaItems[index];
             const mainImg = document.getElementById('main-carousel-img');
-            const nextImage = new Image();
+            const videoContainer = document.getElementById('main-video-container');
+            const videoFacadeThumb = document.getElementById('video-facade-thumb');
+            const cinemaGradient = document.getElementById('cinema-gradient');
+            const expandLabel = document.getElementById('expand-label');
+
             isTransitioning = true;
 
-            nextImage.onload = () => {
+            if (media.type === 'video') {
                 currentImageIndex = index;
-                mainImg.style.opacity = '0.35';
-                mainImg.style.transform = 'scale(0.985)';
+                if (mainImg) mainImg.classList.add('hidden');
+                if (cinemaGradient) cinemaGradient.classList.add('hidden');
+                if (videoContainer) videoContainer.classList.remove('hidden');
+                if (videoFacadeThumb) videoFacadeThumb.src = media.thumb;
+                if (expandLabel) expandLabel.textContent = 'Fullscreen Cinema';
 
-                setTimeout(() => {
-                    mainImg.src = nextImage.src;
-                    mainImg.style.opacity = '1';
-                    mainImg.style.transform = 'scale(1)';
-                    updateThumbnails();
-                    isTransitioning = false;
-                }, 180);
-            };
-
-            nextImage.onerror = () => {
+                updateThumbnails();
                 isTransitioning = false;
-            };
+            } else {
+                if (videoContainer) videoContainer.classList.add('hidden');
+                if (cinemaGradient) cinemaGradient.classList.remove('hidden');
+                if (mainImg) mainImg.classList.remove('hidden');
 
-            nextImage.src = galleryImages[index];
+                const nextImage = new Image();
+                nextImage.onload = () => {
+                    currentImageIndex = index;
+                    mainImg.style.opacity = '0.35';
+                    mainImg.style.transform = 'scale(0.985)';
+
+                    setTimeout(() => {
+                        mainImg.src = nextImage.src;
+                        mainImg.style.opacity = '1';
+                        mainImg.style.transform = 'scale(1)';
+                        if (expandLabel) expandLabel.textContent = 'Click Image to Expand';
+                        updateThumbnails();
+                        isTransitioning = false;
+                    }, 180);
+                };
+
+                nextImage.onerror = () => {
+                    isTransitioning = false;
+                };
+
+                nextImage.src = media.src;
+            }
         }
 
         function updateThumbnails() {
@@ -431,23 +541,33 @@
 
         function nextImage(e) {
             if (e) e.stopPropagation();
-            if (galleryImages.length <= 1) return;
+            if (allMediaItems.length <= 1) return;
             let newIndex = currentImageIndex + 1;
-            if (newIndex >= galleryImages.length) newIndex = 0;
+            if (newIndex >= allMediaItems.length) newIndex = 0;
             setImage(newIndex);
         }
 
         function prevImage(e) {
             if (e) e.stopPropagation();
-            if (galleryImages.length <= 1) return;
+            if (allMediaItems.length <= 1) return;
             let newIndex = currentImageIndex - 1;
-            if (newIndex < 0) newIndex = galleryImages.length - 1;
+            if (newIndex < 0) newIndex = allMediaItems.length - 1;
             setImage(newIndex);
         }
 
-        function openLightbox(imgSrc) {
+        function openLightbox(target) {
+            let index = currentImageIndex;
+            if (typeof target === 'number' && target >= 0 && target < allMediaItems.length) {
+                index = target;
+            }
+
+            // Stop carousel video if playing to avoid audio overlap
+            stopMainVideo();
+
             const lightbox = document.getElementById('gallery-lightbox');
             const img = document.getElementById('lightbox-image');
+            const videoContainer = document.getElementById('lightbox-video-container');
+            const videoIframe = document.getElementById('lightbox-video-iframe');
             const loader = document.getElementById('lightbox-loader');
 
             lightbox.classList.remove('hidden');
@@ -456,17 +576,33 @@
                 lightbox.classList.add('opacity-100');
             }, 10);
 
-            img.classList.remove('scale-100', 'opacity-100');
-            img.classList.add('scale-95', 'opacity-0');
-            loader.classList.remove('hidden');
+            const media = allMediaItems[index] || { type: 'image', src: target };
 
-            img.src = imgSrc;
+            if (media.type === 'video') {
+                if (img) img.classList.add('hidden');
+                if (loader) loader.classList.add('hidden');
+                if (videoContainer) videoContainer.classList.remove('hidden');
 
-            img.onload = () => {
-                loader.classList.add('hidden');
-                img.classList.remove('scale-95', 'opacity-0');
-                img.classList.add('scale-100', 'opacity-100');
-            };
+                const sep = media.embedUrl.includes('?') ? '&' : '?';
+                if (videoIframe) {
+                    videoIframe.src = media.embedUrl + sep + 'autoplay=1';
+                }
+            } else {
+                if (videoContainer) videoContainer.classList.add('hidden');
+                if (videoIframe) videoIframe.src = '';
+                if (img) {
+                    img.classList.remove('hidden', 'scale-100', 'opacity-100');
+                    img.classList.add('scale-95', 'opacity-0');
+                }
+                if (loader) loader.classList.remove('hidden');
+
+                img.src = media.src;
+                img.onload = () => {
+                    if (loader) loader.classList.add('hidden');
+                    img.classList.remove('scale-95', 'opacity-0');
+                    img.classList.add('scale-100', 'opacity-100');
+                };
+            }
 
             document.body.style.overflow = 'hidden';
         }
@@ -474,12 +610,20 @@
         function closeLightbox(e) {
             const lightbox = document.getElementById('gallery-lightbox');
             const img = document.getElementById('lightbox-image');
+            const videoContainer = document.getElementById('lightbox-video-container');
+            const videoIframe = document.getElementById('lightbox-video-iframe');
 
             lightbox.classList.remove('opacity-100');
             lightbox.classList.add('opacity-0');
 
-            img.classList.remove('scale-100', 'opacity-100');
-            img.classList.add('scale-95', 'opacity-0');
+            if (img) {
+                img.classList.remove('scale-100', 'opacity-100');
+                img.classList.add('scale-95', 'opacity-0');
+            }
+
+            // Immediately cut off video audio on close
+            if (videoIframe) videoIframe.src = '';
+            if (videoContainer) videoContainer.classList.add('hidden');
 
             setTimeout(() => {
                 lightbox.classList.add('hidden');

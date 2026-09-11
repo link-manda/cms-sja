@@ -170,8 +170,7 @@
                             <!-- JS will inject previews here -->
                         </div>
 
-                        <p class="text-xs text-default-400 mt-2">You can select multiple files at once. Max 10 photos, up
-                            to 4MB each, max resolution 4096×4096px. Format: JPG, PNG, WEBP.</p>
+                        <p class="text-xs text-default-400 mt-2">You can select multiple files at once. Combined gallery quota: max 10 items (photos + videos). Up to 4MB each for photos, max resolution 4096×4096px. Format: JPG, PNG, WEBP.</p>
                         <div id="gallery-upload-errors"
                             class="mt-2 bg-danger/10 text-danger border border-danger/20 rounded p-3 hidden"></div>
 
@@ -191,6 +190,55 @@
                             </div>
                         @endif
                     </div>
+                </div>
+
+                <!-- Gallery Videos (YouTube) -->
+                <div class="border-t border-default-200 pt-5">
+                    <div class="flex items-center justify-between mb-2">
+                        <div>
+                            <h6 class="text-sm font-semibold text-default-800 flex items-center gap-1">
+                                <i class="size-4 text-danger" data-lucide="video"></i> Project Videos (YouTube) - Optional
+                            </h6>
+                            <p class="text-xs text-default-500 mt-0.5">Add YouTube video links (Standard, Shorts, or youtu.be). Combined with photos, maximum 10 items.</p>
+                        </div>
+                        <button type="button" id="add-video-btn" class="btn btn-sm border border-default-300 hover:bg-default-100 text-default-700 flex items-center gap-1 cursor-pointer">
+                            <i class="size-3.5" data-lucide="plus"></i> Add Video Link
+                        </button>
+                    </div>
+
+                    <div id="video-inputs-container" class="space-y-3 mt-3">
+                        @php
+                            $oldVideos = old('gallery_videos', ['']);
+                        @endphp
+                        @foreach($oldVideos as $index => $videoVal)
+                            <div class="video-input-row flex items-center gap-2">
+                                <div class="relative flex-1">
+                                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-default-400">
+                                        <i class="size-4" data-lucide="youtube"></i>
+                                    </span>
+                                    <input type="url" name="gallery_videos[]" value="{{ $videoVal }}" placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..." class="form-input pl-9 text-sm">
+                                </div>
+                                <button type="button" class="remove-video-row-btn p-2 text-default-400 hover:text-danger rounded border border-default-200 hover:border-danger/30 transition-colors {{ count($oldVideos) <= 1 && empty($videoVal) ? 'hidden' : '' }}" title="Remove link">
+                                    <i class="size-4" data-lucide="trash-2"></i>
+                                </button>
+                            </div>
+                        @endforeach
+                    </div>
+
+                    @if ($errors->hasAny(['gallery_videos', 'gallery_videos.*']))
+                        <div class="mt-2 bg-danger/10 text-danger border border-danger/20 rounded p-3">
+                            @if ($errors->has('gallery_videos'))
+                                <p class="text-sm flex items-center gap-1"><i class="size-4"
+                                        data-lucide="alert-circle"></i> {{ $errors->first('gallery_videos') }}</p>
+                            @endif
+                            @foreach ($errors->get('gallery_videos.*') as $messages)
+                                @foreach ($messages as $message)
+                                    <p class="text-sm flex items-center gap-1"><i class="size-4"
+                                            data-lucide="alert-circle"></i> {{ $message }}</p>
+                                @endforeach
+                            @endforeach
+                        </div>
+                    @endif
                 </div>
 
                 <!-- Promotion & Investment Features -->
@@ -431,6 +479,72 @@
                     Array.from(files).forEach(file => dataTransfer.items.add(file));
                     fileInput.files = dataTransfer.files;
                 }
+            }
+
+            // Dynamic Video Links Repeater
+            const videoContainer = document.getElementById('video-inputs-container');
+            const addVideoBtn = document.getElementById('add-video-btn');
+
+            if (addVideoBtn && videoContainer) {
+                const updateRemoveButtons = () => {
+                    const rows = videoContainer.querySelectorAll('.video-input-row');
+                    rows.forEach(r => {
+                        const btn = r.querySelector('.remove-video-row-btn');
+                        const val = r.querySelector('input').value;
+                        if (rows.length === 1 && !val) {
+                            btn.classList.add('hidden');
+                        } else {
+                            btn.classList.remove('hidden');
+                        }
+                    });
+                };
+
+                addVideoBtn.addEventListener('click', () => {
+                    const rows = videoContainer.querySelectorAll('.video-input-row');
+                    if (rows.length >= 10) {
+                        alert('Combined gallery quota is maximum 10 items.');
+                        return;
+                    }
+
+                    const newRow = document.createElement('div');
+                    newRow.className = 'video-input-row flex items-center gap-2';
+                    newRow.innerHTML = `
+                        <div class="relative flex-1">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-default-400">
+                                <i class="size-4" data-lucide="youtube"></i>
+                            </span>
+                            <input type="url" name="gallery_videos[]" value="" placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..." class="form-input pl-9 text-sm">
+                        </div>
+                        <button type="button" class="remove-video-row-btn p-2 text-default-400 hover:text-danger rounded border border-default-200 hover:border-danger/30 transition-colors" title="Remove link">
+                            <i class="size-4" data-lucide="trash-2"></i>
+                        </button>
+                    `;
+                    videoContainer.appendChild(newRow);
+
+                    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+                        window.lucide.createIcons();
+                    }
+                    updateRemoveButtons();
+                });
+
+                videoContainer.addEventListener('click', (e) => {
+                    const removeBtn = e.target.closest('.remove-video-row-btn');
+                    if (removeBtn) {
+                        const row = removeBtn.closest('.video-input-row');
+                        if (videoContainer.querySelectorAll('.video-input-row').length > 1) {
+                            row.remove();
+                        } else {
+                            row.querySelector('input').value = '';
+                        }
+                        updateRemoveButtons();
+                    }
+                });
+
+                videoContainer.addEventListener('input', (e) => {
+                    if (e.target.matches('input[name="gallery_videos[]"]')) {
+                        updateRemoveButtons();
+                    }
+                });
             }
 
             // Slug Auto-generation

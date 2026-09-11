@@ -126,7 +126,7 @@
         <div class="card-header flex justify-between items-center">
             <div>
                 <h6 class="card-title text-base font-semibold text-default-800">Project Gallery</h6>
-                <p class="text-sm text-default-500 mt-1">Read-only preview of photos shown on the public case study page.</p>
+                <p class="text-sm text-default-500 mt-1">Read-only preview of media shown on the public case study page.</p>
             </div>
             <a href="{{ route('projects.edit', $project) }}" class="btn btn-sm border border-default-300 text-default-700 hover:bg-default-150 cursor-pointer">
                 Manage Gallery
@@ -136,14 +136,28 @@
             @if ($project->images->isNotEmpty())
                 <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                     @foreach ($project->images as $image)
-                        <div class="rounded-lg overflow-hidden border border-default-200 shadow-sm">
-                            <img src="{{ asset('storage/' . $image->image_path) }}" class="w-full h-32 object-cover" alt="{{ $project->title }} gallery image" loading="lazy" decoding="async">
-                        </div>
+                        @if ($image->type === 'video')
+                            <div class="relative rounded-lg overflow-hidden border border-default-200 shadow-sm group">
+                                <img src="{{ $image->thumbnail_url }}" class="w-full h-32 object-cover bg-black" alt="{{ $project->title }} video preview" loading="lazy" decoding="async">
+                                <span class="absolute top-2 left-2 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-danger text-white rounded flex items-center gap-1 shadow pointer-events-none">
+                                    <i class="size-3" data-lucide="video"></i> VIDEO
+                                </span>
+                                <div class="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors pointer-events-none">
+                                    <div class="size-8 rounded-full bg-white/90 text-neutral-900 flex items-center justify-center shadow">
+                                        <i class="size-4 fill-current ml-0.5" data-lucide="play"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        @else
+                            <div class="rounded-lg overflow-hidden border border-default-200 shadow-sm">
+                                <img src="{{ asset('storage/' . $image->image_path) }}" class="w-full h-32 object-cover" alt="{{ $project->title }} gallery image" loading="lazy" decoding="async">
+                            </div>
+                        @endif
                     @endforeach
                 </div>
             @else
                 <div class="rounded-lg border border-dashed border-default-300 bg-default-50 dark:bg-zinc-900 p-8 text-center text-sm text-default-500">
-                    No gallery photos uploaded yet.
+                    No gallery media uploaded yet.
                 </div>
             @endif
         </div>

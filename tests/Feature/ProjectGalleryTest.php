@@ -309,4 +309,233 @@ class ProjectGalleryTest extends TestCase
         $response->assertSee('storage/projects/gallery/admin-one.jpg', false);
         $response->assertSee('Manage Gallery');
     }
+
+    public function test_authenticated_user_can_store_project_with_youtube_videos(): void
+    {
+        Storage::fake('public');
+
+        $category = Category::factory()->create();
+
+        $response = $this->actingAs($this->user)->post(route('projects.store'), [
+            'title' => 'Mixed Media Project',
+            'slug' => 'mixed-media-project',
+            'category_id' => $category->id,
+            'location' => 'Bali',
+            'description' => 'Project with mixed media gallery.',
+            'image' => UploadedFile::fake()->image('main.jpg'),
+            'status' => 'Ongoing',
+            'gallery_images' => [UploadedFile::fake()->image('photo-one.jpg')],
+            'gallery_videos' => [
+                'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+                'https://youtu.be/dQw4w9WgXcQ',
+                '', // empty row should be filtered out
+            ],
+        ]);
+
+        $response->assertRedirect(route('projects.index'));
+
+        $project = Project::where('slug', 'mixed-media-project')->firstOrFail();
+        $this->assertCount(3, $project->images);
+
+        $this->assertDatabaseHas('project_images', [
+            'project_id' => $project->id,
+            'type' => 'image',
+        ]);
+
+        $this->assertDatabaseHas('project_images', [
+            'project_id' => $project->id,
+            'type' => 'video',
+            'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        ]);
+
+        $this->assertDatabaseHas('project_images', [
+            'project_id' => $project->id,
+            'type' => 'video',
+            'video_url' => 'https://youtu.be/dQw4w9WgXcQ',
+        ]);
+    }
+
+    public function test_authenticated_user_can_append_youtube_videos_when_updating_project(): void
+    {
+        $category = Category::factory()->create();
+        $project = Project::factory()->create([
+            'category_id' => $category->id,
+            'image' => 'main.jpg',
+        ]);
+
+        $response = $this->actingAs($this->user)->put(route('projects.update', $project), [
+            'title' => $project->title,
+            'slug' => $project->slug,
+            'category_id' => $category->id,
+            'location' => $project->location,
+            'description' => $project->description,
+            'status' => $project->status,
+            'gallery_videos' => ['https://www.youtube.com/shorts/dQw4w9WgXcQ'],
+        ]);
+
+        $response->assertRedirect(route('projects.index'));
+
+        $this->assertDatabaseHas('project_images', [
+            'project_id' => $project->id,
+            'type' => 'video',
+            'video_url' => 'https://www.youtube.com/shorts/dQw4w9WgXcQ',
+        ]);
+    }
+
+    public function test_gallery_upload_rejects_more_than_ten_combined_media_on_store(): void
+    {
+        Storage::fake('public');
+
+        $category = Category::factory()->create();
+
+        $images = [];
+        for ($i = 1; $i <= 6; $i++) {
+            $images[] = UploadedFile::fake()->image("p{$i}.jpg");
+        }
+
+        $videos = [
+            'https://www.youtube.com/watch?v=dQw4w9WgXc1',
+            'https://www.youtube.com/watch?v=dQw4w9WgXc2',
+            'https://www.youtube.com/watch?v=dQw4w9WgXc3',
+            'https://www.youtube.com/watch?v=dQw4w9WgXc4',
+            'https://www.youtube.com/watch?v=dQw4w9WgXc5',
+        ];
+
+        $response = $this->actingAs($this->user)->from(route('projects.create'))->post(route('projects.store'), [
+            'title' => 'Too Many Media Store',
+            'slug' => 'too-many-media-store',
+            'category_id' => $category->id,
+            'location' => 'Bali',
+            'description' => 'Project with too many media.',
+            'image' => UploadedFile::fake()->image('main.jpg'),
+            'status' => 'Ongoing',
+            'gallery_images' => $images,
+            'gallery_videos' => $videos,
+        ]);
+
+        $response->assertRedirect(route('projects.create'));
+        $response->assertSessionHasErrors(['gallery_images' => 'Gallery may not contain more than 10 total items (photos and videos combined).']);
+    }
+
+    public function test_gallery_upload_rejects_more_than_ten_combined_media_on_update(): void
+    {
+        Storage::fake('public');
+
+        $category = Category::factory()->create();
+        $project = Project::factory()->create([
+            'category_id' => $category->id,
+            'image' => 'main.jpg',
+        ]);
+
+        // Existing 8 media
+        for ($i = 1; $i <= 8; $i++) {
+            ProjectImage::create([
+                'project_id' => $project->id,
+                'type' => 'video',
+                'video_url' => "https://www.youtube.com/watch?v=dQw4w9WgX{$i}",
+            ]);
+        }
+
+        // Add 2 images and 1 video (total new = 3, existing = 8, total = 11 > 10)
+        $response = $this->actingAs($this->user)->from(route('projects.edit', $project))->put(route('projects.update', $project), [
+            'title' => $project->title,
+            'slug' => $project->slug,
+            'category_id' => $category->id,
+            'location' => $project->location,
+            'description' => $project->description,
+            'status' => $project->status,
+            'gallery_images' => [
+                UploadedFile::fake()->image('new1.jpg'),
+                UploadedFile::fake()->image('new2.jpg'),
+            ],
+            'gallery_videos' => ['https://www.youtube.com/watch?v=dQw4w9WgXc9'],
+        ]);
+
+        $response
+            ->assertRedirect(route('projects.edit', $project))
+            ->assertSessionHasErrors(['gallery_images' => 'Gallery may not contain more than 10 total items (photos and videos combined) per project. Currently has 8 items.']);
+    }
+
+    public function test_gallery_video_rejects_non_youtube_url(): void
+    {
+        $category = Category::factory()->create();
+
+        $response = $this->actingAs($this->user)->from(route('projects.create'))->post(route('projects.store'), [
+            'title' => 'Invalid Video URL',
+            'slug' => 'invalid-video-url',
+            'category_id' => $category->id,
+            'location' => 'Bali',
+            'description' => 'Project with invalid video URL.',
+            'image' => UploadedFile::fake()->image('main.jpg'),
+            'status' => 'Ongoing',
+            'gallery_videos' => ['https://vimeo.com/123456789'],
+        ]);
+
+        $response
+            ->assertRedirect(route('projects.create'))
+            ->assertSessionHasErrors(['gallery_videos.0']);
+    }
+
+    public function test_deleting_video_gallery_item_does_not_trigger_flysystem_error(): void
+    {
+        $project = Project::factory()->create();
+        $videoItem = ProjectImage::create([
+            'project_id' => $project->id,
+            'type' => 'video',
+            'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            'image_path' => null,
+        ]);
+
+        $response = $this->actingAs($this->user)->delete(route('projects.gallery.delete', [$project, $videoItem->id]));
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success', 'Gallery image deleted successfully!');
+        $this->assertDatabaseMissing('project_images', ['id' => $videoItem->id]);
+    }
+
+    public function test_public_project_case_study_renders_mixed_media_payload_and_video_facade(): void
+    {
+        $project = Project::factory()->create([
+            'title' => 'Cinema Showcase Project',
+            'slug' => 'cinema-showcase-project',
+            'image' => 'main.jpg',
+        ]);
+
+        ProjectImage::create([
+            'project_id' => $project->id,
+            'type' => 'video',
+            'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        ]);
+
+        $response = $this->get(route('public.projects.show', $project->slug));
+
+        $response->assertOk();
+        $response->assertSee('id="project-carousel"', false);
+        $response->assertSee('id="video-facade"', false);
+        $response->assertSee('VIDEO', false);
+        $response->assertSee('youtube-nocookie.com/embed/dQw4w9WgXcQ', false);
+        $response->assertSee('img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg', false);
+        $response->assertSee('gallery-lightbox', false);
+        $response->assertSee('lightbox-video-container', false);
+    }
+
+    public function test_admin_project_detail_shows_video_badge_and_thumbnail(): void
+    {
+        $project = Project::factory()->create([
+            'title' => 'Admin Video Project',
+        ]);
+
+        ProjectImage::create([
+            'project_id' => $project->id,
+            'type' => 'video',
+            'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        ]);
+
+        $response = $this->actingAs($this->user)->get(route('projects.show', $project));
+
+        $response->assertOk();
+        $response->assertSee('Project Gallery');
+        $response->assertSee('VIDEO');
+        $response->assertSee('img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg', false);
+    }
 }

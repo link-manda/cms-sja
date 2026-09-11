@@ -147,7 +147,7 @@
                             <!-- JS will inject previews here -->
                         </div>
 
-                        <p class="text-xs text-default-400 mt-2">Upload additional photos to the gallery. Max 10 photos total, up to 4MB each, max resolution 4096×4096px. Format: JPG, PNG, WEBP.</p>
+                        <p class="text-xs text-default-400 mt-2">Upload additional photos to the gallery. Combined gallery quota: max 10 items (photos + videos). Up to 4MB each for photos, max resolution 4096×4096px. Format: JPG, PNG, WEBP.</p>
                         <div id="gallery-upload-errors" class="mt-2 bg-danger/10 text-danger border border-danger/20 rounded p-3 hidden"></div>
 
                         <!-- Fixed Validation Errors (Wildcard Array Loop) -->
@@ -164,6 +164,55 @@
                             </div>
                         @endif
                     </div>
+                </div>
+
+                <!-- Gallery Videos (YouTube) -->
+                <div class="border-t border-default-200 pt-5">
+                    <div class="flex items-center justify-between mb-2">
+                        <div>
+                            <h6 class="text-sm font-semibold text-default-800 flex items-center gap-1">
+                                <i class="size-4 text-danger" data-lucide="video"></i> Project Videos (YouTube) - Optional
+                            </h6>
+                            <p class="text-xs text-default-500 mt-0.5">Add YouTube video links (Standard, Shorts, or youtu.be). Combined with existing media and new photos, maximum 10 items.</p>
+                        </div>
+                        <button type="button" id="add-video-btn" class="btn btn-sm border border-default-300 hover:bg-default-100 text-default-700 flex items-center gap-1 cursor-pointer">
+                            <i class="size-3.5" data-lucide="plus"></i> Add Video Link
+                        </button>
+                    </div>
+
+                    <div id="video-inputs-container" class="space-y-3 mt-3">
+                        @php
+                            $oldVideos = old('gallery_videos', ['']);
+                        @endphp
+                        @foreach($oldVideos as $index => $videoVal)
+                            <div class="video-input-row flex items-center gap-2">
+                                <div class="relative flex-1">
+                                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-default-400">
+                                        <i class="size-4" data-lucide="youtube"></i>
+                                    </span>
+                                    <input type="url" name="gallery_videos[]" value="{{ $videoVal }}" placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..." class="form-input pl-9 text-sm">
+                                </div>
+                                <button type="button" class="remove-video-row-btn p-2 text-default-400 hover:text-danger rounded border border-default-200 hover:border-danger/30 transition-colors {{ count($oldVideos) <= 1 && empty($videoVal) ? 'hidden' : '' }}" title="Remove link">
+                                    <i class="size-4" data-lucide="trash-2"></i>
+                                </button>
+                            </div>
+                        @endforeach
+                    </div>
+
+                    @if ($errors->hasAny(['gallery_videos', 'gallery_videos.*']))
+                        <div class="mt-2 bg-danger/10 text-danger border border-danger/20 rounded p-3">
+                            @if ($errors->has('gallery_videos'))
+                                <p class="text-sm flex items-center gap-1"><i class="size-4"
+                                        data-lucide="alert-circle"></i> {{ $errors->first('gallery_videos') }}</p>
+                            @endif
+                            @foreach ($errors->get('gallery_videos.*') as $messages)
+                                @foreach ($messages as $message)
+                                    <p class="text-sm flex items-center gap-1"><i class="size-4"
+                                            data-lucide="alert-circle"></i> {{ $message }}</p>
+                                @endforeach
+                            @endforeach
+                        </div>
+                    @endif
                 </div>
 
                 <!-- Promotion & Investment Features -->
@@ -245,17 +294,29 @@
     <div class="card mt-6">
         <div class="card-header">
             <h6 class="card-title text-base font-semibold text-default-800">Current Project Gallery</h6>
-            <p class="text-sm text-default-500 mt-1">Manage existing photos in the gallery. Deleting a photo here will remove it immediately.</p>
+            <p class="text-sm text-default-500 mt-1">Manage existing media in the gallery. Deleting an item here will remove it immediately.</p>
         </div>
         <div class="card-body">
             <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                 @foreach($project->images as $image)
                     <div class="relative group rounded-lg overflow-hidden border border-default-200 shadow-sm hover:shadow-md transition-all">
-                        <img src="{{ asset('storage/' . $image->image_path) }}" class="w-full h-32 object-cover" alt="Gallery Image">
+                        @if($image->type === 'video')
+                            <img src="{{ $image->thumbnail_url }}" class="w-full h-32 object-cover bg-black" alt="Gallery Video" loading="lazy">
+                            <span class="absolute top-2 left-2 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-danger text-white rounded flex items-center gap-1 shadow pointer-events-none">
+                                <i class="size-3" data-lucide="video"></i> VIDEO
+                            </span>
+                            <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                <div class="size-8 rounded-full bg-black/60 text-white flex items-center justify-center shadow">
+                                    <i class="size-4 fill-current ml-0.5" data-lucide="play"></i>
+                                </div>
+                            </div>
+                        @else
+                            <img src="{{ asset('storage/' . $image->image_path) }}" class="w-full h-32 object-cover" alt="Gallery Image" loading="lazy">
+                        @endif
                         
                         <!-- Delete Button (Triggers Modal) -->
                         <button type="button" 
-                                class="dynamic-action-btn absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-danger/90 hover:bg-danger text-white p-1.5 rounded-full flex items-center justify-center shadow-lg transform hover:scale-110 transition-transform"
+                                class="dynamic-action-btn absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-danger/90 hover:bg-danger text-white p-1.5 rounded-full flex items-center justify-center shadow-lg transform hover:scale-110 transition-transform cursor-pointer"
                                 data-hs-overlay="#dynamic-action-modal"
                                 data-action-url="{{ route('projects.gallery.delete', [$project, $image->id]) }}"
                                 data-action-type="delete-gallery">
@@ -457,6 +518,76 @@
             const titleInput = document.getElementById('title');
             const slugInput = document.getElementById('slug');
 
+            // Dynamic Video Links Repeater
+            const videoContainer = document.getElementById('video-inputs-container');
+            const addVideoBtn = document.getElementById('add-video-btn');
+
+            if (addVideoBtn && videoContainer) {
+                const updateRemoveButtons = () => {
+                    const rows = videoContainer.querySelectorAll('.video-input-row');
+                    rows.forEach(r => {
+                        const btn = r.querySelector('.remove-video-row-btn');
+                        const val = r.querySelector('input').value;
+                        if (rows.length === 1 && !val) {
+                            btn.classList.add('hidden');
+                        } else {
+                            btn.classList.remove('hidden');
+                        }
+                    });
+                };
+
+                addVideoBtn.addEventListener('click', () => {
+                    const rows = videoContainer.querySelectorAll('.video-input-row');
+                    if (rows.length >= 10) {
+                        alert('Combined gallery quota is maximum 10 items.');
+                        return;
+                    }
+
+                    const newRow = document.createElement('div');
+                    newRow.className = 'video-input-row flex items-center gap-2';
+                    newRow.innerHTML = `
+                        <div class="relative flex-1">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-default-400">
+                                <i class="size-4" data-lucide="youtube"></i>
+                            </span>
+                            <input type="url" name="gallery_videos[]" value="" placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..." class="form-input pl-9 text-sm">
+                        </div>
+                        <button type="button" class="remove-video-row-btn p-2 text-default-400 hover:text-danger rounded border border-default-200 hover:border-danger/30 transition-colors" title="Remove link">
+                            <i class="size-4" data-lucide="trash-2"></i>
+                        </button>
+                    `;
+                    videoContainer.appendChild(newRow);
+
+                    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+                        window.lucide.createIcons();
+                    }
+                    updateRemoveButtons();
+                });
+
+                videoContainer.addEventListener('click', (e) => {
+                    const removeBtn = e.target.closest('.remove-video-row-btn');
+                    if (removeBtn) {
+                        const row = removeBtn.closest('.video-input-row');
+                        if (videoContainer.querySelectorAll('.video-input-row').length > 1) {
+                            row.remove();
+                        } else {
+                            row.querySelector('input').value = '';
+                        }
+                        updateRemoveButtons();
+                    }
+                });
+
+                videoContainer.addEventListener('input', (e) => {
+                    if (e.target.matches('input[name="gallery_videos[]"]')) {
+                        updateRemoveButtons();
+                    }
+                });
+            }
+
+            // Slug Auto-generation
+            const titleInput = document.getElementById('title');
+            const slugInput = document.getElementById('slug');
+
             if (titleInput && slugInput) {
                 titleInput.addEventListener('input', function() {
                     let title = this.value;
@@ -487,8 +618,8 @@
                         
                         if (actionType === 'delete-gallery') {
                             modalMethod.value = 'DELETE';
-                            modalTitle.textContent = 'Delete Photo?';
-                            modalDescription.textContent = 'Are you sure you want to delete this photo from the gallery? This action cannot be undone.';
+                            modalTitle.textContent = 'Delete Gallery Item?';
+                            modalDescription.textContent = 'Are you sure you want to delete this item from the gallery? This action cannot be undone.';
                             modalSubmitBtn.className = 'btn bg-danger text-white hover:bg-red-700';
                             modalSubmitBtn.innerHTML = 'Yes, Delete';
                         }
