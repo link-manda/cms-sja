@@ -247,42 +247,64 @@
 
                     <!-- Toggle Switch (Checkbox) -->
                     <div class="mb-4 flex items-center">
+                        <input type="hidden" name="is_for_sale_or_rent" value="0">
                         <input type="checkbox" id="is_for_sale_or_rent" name="is_for_sale_or_rent" value="1"
-                            class="w-5 h-5 text-primary rounded border-default-300" {{ old('is_for_sale_or_rent') ? 'checked' : '' }}>
-                        <label for="is_for_sale_or_rent" class="ml-2 text-sm font-medium text-default-700">
-                            Enable Property Promotion (Display Rent/Sale Price on Public Page)
+                            class="w-5 h-5 text-primary rounded border-default-300 cursor-pointer" {{ old('is_for_sale_or_rent') ? 'checked' : '' }}>
+                        <label for="is_for_sale_or_rent" class="ml-2 text-sm font-medium text-default-700 cursor-pointer">
+                            Enable Property Promotion (Display Rent/Sale/Investment Price on Public Page)
                         </label>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div id="promotion-fields-container" class="grid grid-cols-1 md:grid-cols-2 gap-4 {{ old('is_for_sale_or_rent') ? '' : 'hidden' }}">
                         <!-- Property Type -->
                         <div>
-                            <label class="block text-sm font-medium text-default-700 mb-1">Offer Type</label>
-                            <select name="property_type"
+                            <label class="block text-sm font-medium text-default-700 mb-1" for="property_type">
+                                Offer Type <span class="text-danger">*</span>
+                            </label>
+                            <select id="property_type" name="property_type"
                                 class="w-full border-default-300 rounded-md shadow-sm focus:border-primary focus:ring-primary">
                                 <option value="">-- Select Type --</option>
-                                <option value="Rent" {{ old('property_type') == 'Rent' ? 'selected' : '' }}>For Rent (Boarding/Villa)</option>
                                 <option value="Sale" {{ old('property_type') == 'Sale' ? 'selected' : '' }}>For Sale (Unit/Land)</option>
+                                <option value="Investment" {{ old('property_type') == 'Investment' ? 'selected' : '' }}>For Investment (Commercial Property)</option>
+                                <option value="Rent" {{ old('property_type') == 'Rent' ? 'selected' : '' }}>For Rent (Boarding/Kos / Villa)</option>
                             </select>
                             <x-input-error :messages="$errors->get('property_type')" class="mt-1" />
                         </div>
 
                         <!-- Price -->
                         <div>
-                            <label class="block text-sm font-medium text-default-700 mb-1">Price (IDR)</label>
-                            <input type="number" name="price" placeholder="Example: 1500000" value="{{ old('price') }}"
+                            <label class="block text-sm font-medium text-default-700 mb-1" for="price">Price (IDR)</label>
+                            <input type="number" id="price" name="price" placeholder="Example: 1500000" value="{{ old('price') }}"
                                 class="w-full border-default-300 rounded-md shadow-sm focus:border-primary focus:ring-primary">
                             <span class="text-xs text-default-500">Numbers only without dots (e.g., 1500000)</span>
                             <x-input-error :messages="$errors->get('price')" class="mt-1" />
                         </div>
 
+                        @php
+                            $isRoiVisible = old('is_for_sale_or_rent') && in_array(old('property_type'), ['Sale', 'Investment']);
+                            $isKosVisible = old('is_for_sale_or_rent') && old('property_type') === 'Rent';
+                        @endphp
+
                         <!-- ROI Estimation -->
-                        <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-default-700 mb-1">ROI Estimation / Profit Details</label>
-                            <textarea name="roi_estimation" rows="3"
-                                placeholder="e.g. If the room is rented for 1.5 million/month, estimated ROI in 4 years."
+                        <div id="roi-estimation-wrapper" class="md:col-span-2 {{ $isRoiVisible ? '' : 'hidden' }}">
+                            <label class="block text-sm font-medium text-default-700 mb-1" for="roi_estimation">
+                                ROI Estimation / Profit Details <span class="text-danger">*</span>
+                            </label>
+                            <textarea id="roi_estimation" name="roi_estimation" rows="3"
+                                placeholder="e.g. Projected ROI 12% per year with estimated payback period within 5-6 years."
                                 class="w-full border-default-300 rounded-md shadow-sm focus:border-primary focus:ring-primary">{{ old('roi_estimation') }}</textarea>
                             <x-input-error :messages="$errors->get('roi_estimation')" class="mt-1" />
+                        </div>
+
+                        <!-- Rental / Kos-kosan Callout Info -->
+                        <div id="kos-info-callout" class="md:col-span-2 {{ $isKosVisible ? '' : 'hidden' }}">
+                            <div class="p-4 rounded-lg bg-primary/5 border border-primary/20 text-xs text-default-600 flex items-start gap-2.5">
+                                <i class="size-4 text-primary shrink-0 mt-0.5" data-lucide="info"></i>
+                                <div>
+                                    <p class="font-semibold text-primary">Informasi Tipe Sewa / Kos-kosan</p>
+                                    <p class="mt-0.5 text-default-500">Untuk properti kos-kosan atau sewa, rincian biaya sewa dan fasilitas kamar sudah tercakup pada bagian <strong>Project Description</strong> sehingga estimasi ROI tidak diperlukan dan otomatis dinonaktifkan.</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -562,6 +584,68 @@
                     slugInput.value = slug;
                 });
             }
+
+            // Property Promotion & Conditional ROI Logic
+            const isPromotionCheckbox = document.getElementById('is_for_sale_or_rent');
+            const promotionContainer = document.getElementById('promotion-fields-container');
+            const propertyTypeSelect = document.getElementById('property_type');
+            const roiWrapper = document.getElementById('roi-estimation-wrapper');
+            const roiInput = document.getElementById('roi_estimation');
+            const kosInfoCallout = document.getElementById('kos-info-callout');
+
+            function handlePropertyTypeChange() {
+                if (!isPromotionCheckbox || !isPromotionCheckbox.checked) {
+                    if (roiWrapper) roiWrapper.classList.add('hidden');
+                    if (kosInfoCallout) kosInfoCallout.classList.add('hidden');
+                    if (roiInput) roiInput.removeAttribute('required');
+                    return;
+                }
+
+                const selectedType = propertyTypeSelect ? propertyTypeSelect.value : '';
+
+                if (selectedType === 'Sale' || selectedType === 'Investment') {
+                    if (roiWrapper) roiWrapper.classList.remove('hidden');
+                    if (kosInfoCallout) kosInfoCallout.classList.add('hidden');
+                    if (roiInput) roiInput.setAttribute('required', 'required');
+                } else if (selectedType === 'Rent') {
+                    if (roiWrapper) roiWrapper.classList.add('hidden');
+                    if (kosInfoCallout) kosInfoCallout.classList.remove('hidden');
+                    if (roiInput) {
+                        roiInput.removeAttribute('required');
+                    }
+                } else {
+                    if (roiWrapper) roiWrapper.classList.add('hidden');
+                    if (kosInfoCallout) kosInfoCallout.classList.add('hidden');
+                    if (roiInput) roiInput.removeAttribute('required');
+                }
+            }
+
+            function handlePromotionToggle() {
+                if (!isPromotionCheckbox || !promotionContainer) return;
+
+                if (isPromotionCheckbox.checked) {
+                    promotionContainer.classList.remove('hidden');
+                    if (propertyTypeSelect) propertyTypeSelect.setAttribute('required', 'required');
+                    handlePropertyTypeChange();
+                } else {
+                    promotionContainer.classList.add('hidden');
+                    if (propertyTypeSelect) propertyTypeSelect.removeAttribute('required');
+                    if (roiInput) roiInput.removeAttribute('required');
+                    if (roiWrapper) roiWrapper.classList.add('hidden');
+                    if (kosInfoCallout) kosInfoCallout.classList.add('hidden');
+                }
+            }
+
+            if (isPromotionCheckbox) {
+                isPromotionCheckbox.addEventListener('change', handlePromotionToggle);
+            }
+
+            if (propertyTypeSelect) {
+                propertyTypeSelect.addEventListener('change', handlePropertyTypeChange);
+            }
+
+            // Initialize state on page load
+            handlePromotionToggle();
         });
     </script>
 @endsection

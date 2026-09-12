@@ -55,7 +55,7 @@ class ProjectController extends Controller
     public function store(StoreProjectRequest $request)
     {
         $validatedData = $request->validated();
-        $validatedData['is_for_sale_or_rent'] = $request->has('is_for_sale_or_rent');
+        $validatedData['is_for_sale_or_rent'] = $request->boolean('is_for_sale_or_rent');
 
         $this->projectService->createProject($validatedData);
 
@@ -94,7 +94,7 @@ class ProjectController extends Controller
     public function update(UpdateProjectRequest $request, Project $project)
     {
         $validatedData = $request->validated();
-        $validatedData['is_for_sale_or_rent'] = $request->has('is_for_sale_or_rent');
+        $validatedData['is_for_sale_or_rent'] = $request->boolean('is_for_sale_or_rent');
 
         $this->projectService->updateProject($project, $validatedData);
 

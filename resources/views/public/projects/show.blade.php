@@ -196,39 +196,69 @@
 
                 <!-- Investment Opportunity Card (If Enabled) -->
                 @if ($project->is_for_sale_or_rent)
+                    @php
+                        $listingTitle = match($project->property_type) {
+                            'Rent' => 'Rental Property Offering',
+                            'Sale' => 'Property For Sale',
+                            'Investment' => 'Commercial & Property Investment',
+                            default => 'Commercial & Property Offering',
+                        };
+                        $listingBadge = match($project->property_type) {
+                            'Rent' => 'For Rent',
+                            'Sale' => 'For Sale',
+                            'Investment' => 'Investment Opportunity',
+                            default => !empty($project->property_type) ? 'For ' . $project->property_type : 'Property Offering',
+                        };
+                        $waBtnLabel = match($project->property_type) {
+                            'Rent' => 'Inquire Rental Availability',
+                            'Sale' => 'Inquire Property Purchase',
+                            'Investment' => 'Inquire Investment Specifications',
+                            default => 'Inquire About This Property',
+                        };
+                        $waText = match($project->property_type) {
+                            'Rent' => 'Hello PT Sistem Jaya Abadi, I am interested in renting / boarding room for ' . $project->title,
+                            'Sale' => 'Hello PT Sistem Jaya Abadi, I am interested in purchasing property ' . $project->title,
+                            'Investment' => 'Hello PT Sistem Jaya Abadi, I am interested in the property investment opportunity for ' . $project->title,
+                            default => 'Hello PT Sistem Jaya Abadi, I am interested in the property for ' . $project->title,
+                        };
+                    @endphp
                     <div class="glass-card rounded-[2rem] p-8 sm:p-10 border border-emerald-500/20 shadow-2xl relative overflow-hidden bg-gradient-to-br from-white via-white to-emerald-50/30">
                         <div class="flex items-start gap-4 mb-6">
                             <div class="w-12 h-12 bg-emerald-500 text-white rounded-2xl flex items-center justify-center shadow-sm shrink-0">
                                 <span class="material-symbols-outlined text-2xl">real_estate_agent</span>
                             </div>
                             <div>
-                                <span class="text-[10px] font-bold text-secondary uppercase tracking-[0.2em] mb-1 block">Property Investment</span>
-                                <h3 class="font-display text-2xl font-bold text-primary tracking-tight">Commercial &amp; Property Offering</h3>
+                                <span class="text-[10px] font-bold text-secondary uppercase tracking-[0.2em] mb-1 block">{{ $listingBadge }}</span>
+                                <h3 class="font-display text-2xl font-bold text-primary tracking-tight">{{ $listingTitle }}</h3>
                             </div>
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                             <div class="bg-white/90 p-4 rounded-2xl border border-black/5 shadow-sm">
                                 <span class="block text-[10px] font-bold text-muted uppercase tracking-wider mb-1">Listing Type</span>
-                                <span class="font-display font-bold text-primary text-lg">For {{ $project->property_type }}</span>
+                                <span class="font-display font-bold text-primary text-lg">{{ $listingBadge }}</span>
                             </div>
                             <div class="bg-white/90 p-4 rounded-2xl border border-secondary/20 shadow-sm">
                                 <span class="block text-[10px] font-bold text-muted uppercase tracking-wider mb-1">Pricing Valuation</span>
-                                <span class="font-display font-bold text-secondary text-lg sm:text-xl">Rp {{ number_format($project->price, 0, ',', '.') }}</span>
+                                @if ($project->price !== null)
+                                    <span class="font-display font-bold text-secondary text-lg sm:text-xl">Rp {{ number_format((float) $project->price, 0, ',', '.') }}</span>
+                                @else
+                                    <span class="font-display font-bold text-slate-500 text-base italic">Price on Request</span>
+                                @endif
                             </div>
                         </div>
 
-                        @if ($project->roi_estimation)
+                        @if (strcasecmp($project->property_type ?? '', 'Rent') !== 0 && filled($project->roi_estimation))
                             <div class="bg-emerald-500/10 p-5 rounded-2xl border border-emerald-500/20 mb-6">
                                 <span class="block text-[10px] font-bold text-emerald-700 uppercase tracking-wider mb-1.5">Projected ROI &amp; Feasibility</span>
                                 <p class="text-xs sm:text-sm text-primary/80 leading-relaxed">{{ $project->roi_estimation }}</p>
                             </div>
                         @endif
 
-                        <a href="https://wa.me/{{ format_wa_number(setting('contact_whatsapp', '628123456789')) }}?text=Hello%20PT%20Sistem%20Jaya%20Abadi,%20I%20am%20interested%20in%20the%20property%20investment%20for%20{{ urlencode($project->title) }}"
+                        <a href="https://wa.me/{{ format_wa_number(setting('contact_whatsapp', '628123456789')) }}?text={{ urlencode($waText) }}"
                             target="_blank" rel="noopener noreferrer"
                             class="w-full text-center bg-secondary hover:bg-secondary-hover text-white font-bold text-xs uppercase tracking-wider py-4 rounded-xl shadow-glow active:scale-[0.98] transition-all flex items-center justify-center gap-2">
-                            <span>Inquire Investment Specifications</span>
+                            <span>{{ $waBtnLabel }}</span>
                             <span class="material-symbols-outlined text-sm">north_east</span>
                         </a>
                     </div>

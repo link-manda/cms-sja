@@ -21,6 +21,8 @@ class ProjectService
      */
     public function createProject(array $data): Project
     {
+        $data = $this->normalizePropertyOfferData($data);
+
         if (isset($data['image']) && $data['image'] instanceof UploadedFile) {
             $filename = Str::random(40).'.'.$data['image']->extension();
             $data['image']->storeAs('projects', $filename, 'public');
@@ -44,6 +46,8 @@ class ProjectService
      */
     public function updateProject(Project $project, array $data): bool
     {
+        $data = $this->normalizePropertyOfferData($data);
+
         if (isset($data['image']) && $data['image'] instanceof UploadedFile) {
             if ($project->image && Storage::disk('public')->exists('projects/'.$project->image)) {
                 Storage::disk('public')->delete('projects/'.$project->image);
@@ -66,6 +70,37 @@ class ProjectService
 
             return $updated;
         });
+    }
+
+    /**
+     * Menormalkan data penawaran properti dan estimasi ROI.
+     */
+    private function normalizePropertyOfferData(array $data): array
+    {
+        if (array_key_exists('is_for_sale_or_rent', $data)) {
+            $isEnabled = filter_var($data['is_for_sale_or_rent'], FILTER_VALIDATE_BOOLEAN);
+            $data['is_for_sale_or_rent'] = $isEnabled;
+
+            if ($isEnabled) {
+                $propertyType = isset($data['property_type']) ? ucfirst(strtolower(trim((string) $data['property_type']))) : null;
+                $data['property_type'] = $propertyType;
+                if ($propertyType === 'Rent') {
+                    $data['roi_estimation'] = null;
+                }
+            } else {
+                $data['property_type'] = null;
+                $data['price'] = null;
+                $data['roi_estimation'] = null;
+            }
+        } elseif (isset($data['property_type'])) {
+            $propertyType = ucfirst(strtolower(trim((string) $data['property_type'])));
+            $data['property_type'] = $propertyType;
+            if ($propertyType === 'Rent') {
+                $data['roi_estimation'] = null;
+            }
+        }
+
+        return $data;
     }
 
     private function storeGalleryMedia(Project $project, array $images, array $videoUrls = []): void

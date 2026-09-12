@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 class UpdateProjectRequest extends FormRequest
@@ -41,9 +42,21 @@ class UpdateProjectRequest extends FormRequest
             'meta_title' => 'nullable|string|max:255',
             'meta_description' => 'nullable|string',
             'is_for_sale_or_rent' => 'boolean',
-            'property_type' => 'nullable|in:Rent,Sale',
-            'price' => 'nullable|numeric',
-            'roi_estimation' => 'nullable|string',
+            'property_type' => [
+                'nullable',
+                'string',
+                'in:Rent,Sale,Investment',
+                Rule::requiredIf(fn () => $this->boolean('is_for_sale_or_rent')),
+            ],
+            'price' => 'nullable|numeric|min:0|max:9999999999999.99',
+            'roi_estimation' => [
+                'nullable',
+                'string',
+                'max:65535',
+                Rule::requiredIf(function () {
+                    return $this->boolean('is_for_sale_or_rent') && in_array($this->input('property_type'), ['Sale', 'Investment'], true);
+                }),
+            ],
             'gallery_images' => 'nullable|array|max:10',
             'gallery_images.*' => 'image|mimes:jpeg,png,jpg,webp|extensions:jpg,jpeg,png,webp|max:10240',
             'gallery_videos' => 'nullable|array',
@@ -59,6 +72,9 @@ class UpdateProjectRequest extends FormRequest
             'image.mimes' => 'Main photo format must be JPG, PNG, or WEBP.',
             'image.extensions' => 'Main photo extension must be .jpg, .jpeg, .png, or .webp.',
             'image.max' => 'Main photo may not be greater than 5 MB.',
+            'property_type.required' => 'Please select a property offer type when property promotion is enabled.',
+            'property_type.in' => 'Selected property offer type is invalid.',
+            'roi_estimation.required' => 'The ROI estimation / profit details field is required when the property offer is for Sale or Investment.',
             'gallery_images.max' => 'Gallery may not contain more than 10 photos.',
             'gallery_images.*.uploaded' => 'Gallery photo failed to upload. Each gallery photo may not be greater than 10 MB and the server upload limit must allow 10 MB files.',
             'gallery_images.*.image' => 'Gallery file must be a valid image.',
