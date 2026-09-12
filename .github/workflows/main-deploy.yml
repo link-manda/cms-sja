@@ -217,6 +217,14 @@ jobs:
         Deny from all
         HTEOF
 
+        # Run database migrations and cache warmup
+        cd /home/sistemja/core-cms
+        php artisan migrate --force
+        php artisan optimize:clear
+        php artisan config:cache
+        php artisan route:cache
+        php artisan view:cache
+
         # Set correct permissions
         chmod 750 /home/sistemja/core-cms
         chmod 640 /home/sistemja/core-cms/.env
