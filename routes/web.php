@@ -41,6 +41,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware('throttle:30,1')
         ->name('projects.gallery.delete');
 
+    // Rute upload gambar galeri sementara (asynchronous staged upload)
+    Route::post('manage/projects/upload-temp-gallery', [ProjectController::class, 'uploadTempGallery'])
+        ->middleware('throttle:60,1')
+        ->name('projects.upload-temp-gallery');
+
     Route::resource('manage/projects', ProjectController::class)
         ->names('projects')
         ->parameters(['projects' => 'project'])

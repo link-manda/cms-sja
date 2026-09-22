@@ -23,22 +23,32 @@ class ProjectService
     {
         $data = $this->normalizePropertyOfferData($data);
 
+        $newStoredImage = null;
         if (isset($data['image']) && $data['image'] instanceof UploadedFile) {
             $filename = Str::random(40).'.'.$data['image']->extension();
             $data['image']->storeAs('projects', $filename, 'public');
             $data['image'] = $filename;
+            $newStoredImage = $filename;
         }
 
         $galleryImages = $data['gallery_images'] ?? [];
+        $tempGalleryImages = $data['temp_gallery_images'] ?? [];
         $galleryVideos = $data['gallery_videos'] ?? [];
-        unset($data['gallery_images'], $data['gallery_videos']);
+        unset($data['gallery_images'], $data['temp_gallery_images'], $data['gallery_videos']);
 
-        return DB::transaction(function () use ($data, $galleryImages, $galleryVideos) {
-            $project = Project::create($data);
-            $this->storeGalleryMedia($project, $galleryImages, $galleryVideos);
+        try {
+            return DB::transaction(function () use ($data, $galleryImages, $tempGalleryImages, $galleryVideos) {
+                $project = Project::create($data);
+                $this->storeGalleryMedia($project, $galleryImages, $galleryVideos, $tempGalleryImages);
 
-            return $project;
-        });
+                return $project;
+            });
+        } catch (Throwable $e) {
+            if ($newStoredImage && Storage::disk('public')->exists('projects/'.$newStoredImage)) {
+                Storage::disk('public')->delete('projects/'.$newStoredImage);
+            }
+            throw $e;
+        }
     }
 
     /**
@@ -48,28 +58,45 @@ class ProjectService
     {
         $data = $this->normalizePropertyOfferData($data);
 
-        if (isset($data['image']) && $data['image'] instanceof UploadedFile) {
-            if ($project->image && Storage::disk('public')->exists('projects/'.$project->image)) {
-                Storage::disk('public')->delete('projects/'.$project->image);
-            }
+        $oldImageToDelete = null;
+        $newStoredImage = null;
 
+        if (isset($data['image']) && $data['image'] instanceof UploadedFile) {
+            $oldImageToDelete = $project->image;
             $filename = Str::random(40).'.'.$data['image']->extension();
             $data['image']->storeAs('projects', $filename, 'public');
             $data['image'] = $filename;
+            $newStoredImage = $filename;
         } else {
             unset($data['image']);
         }
 
         $galleryImages = $data['gallery_images'] ?? [];
+        $tempGalleryImages = $data['temp_gallery_images'] ?? [];
         $galleryVideos = $data['gallery_videos'] ?? [];
-        unset($data['gallery_images'], $data['gallery_videos']);
+        unset($data['gallery_images'], $data['temp_gallery_images'], $data['gallery_videos']);
 
-        return DB::transaction(function () use ($project, $data, $galleryImages, $galleryVideos) {
-            $updated = $project->update($data);
-            $this->storeGalleryMedia($project, $galleryImages, $galleryVideos);
+        try {
+            return DB::transaction(function () use ($project, $data, $galleryImages, $tempGalleryImages, $galleryVideos, $oldImageToDelete) {
+                $updated = $project->update($data);
+                $this->storeGalleryMedia($project, $galleryImages, $galleryVideos, $tempGalleryImages);
 
-            return $updated;
-        });
+                if ($oldImageToDelete) {
+                    DB::afterCommit(function () use ($oldImageToDelete) {
+                        if (Storage::disk('public')->exists('projects/'.$oldImageToDelete)) {
+                            Storage::disk('public')->delete('projects/'.$oldImageToDelete);
+                        }
+                    });
+                }
+
+                return $updated;
+            });
+        } catch (Throwable $e) {
+            if ($newStoredImage && Storage::disk('public')->exists('projects/'.$newStoredImage)) {
+                Storage::disk('public')->delete('projects/'.$newStoredImage);
+            }
+            throw $e;
+        }
     }
 
     /**
@@ -103,12 +130,12 @@ class ProjectService
         return $data;
     }
 
-    private function storeGalleryMedia(Project $project, array $images, array $videoUrls = []): void
+    private function storeGalleryMedia(Project $project, array $images, array $videoUrls = [], array $tempImages = []): void
     {
         $storedPaths = [];
 
         try {
-            // 1. Process uploaded image files
+            // 1. Process uploaded image files (direct multipart)
             foreach ($images as $image) {
                 if (! $image instanceof UploadedFile) {
                     continue;
@@ -130,7 +157,30 @@ class ProjectService
                 ]);
             }
 
-            // 2. Process video URLs (filter empty/whitespace)
+            // 2. Process temporary uploaded image files (asynchronous staged upload)
+            foreach ($tempImages as $tempPath) {
+                if (! is_string($tempPath) || empty($tempPath)) {
+                    continue;
+                }
+
+                $cleanTempPath = str_replace('\\', '/', $tempPath);
+                $filename = basename($cleanTempPath);
+                $sourcePath = 'projects/temp-gallery/'.$filename;
+
+                if (Storage::disk('public')->exists($sourcePath)) {
+                    $targetPath = 'projects/gallery/'.$filename;
+                    Storage::disk('public')->move($sourcePath, $targetPath);
+                    $storedPaths[] = $targetPath;
+
+                    $project->images()->create([
+                        'type' => 'image',
+                        'image_path' => $targetPath,
+                        'video_url' => null,
+                    ]);
+                }
+            }
+
+            // 3. Process video URLs (filter empty/whitespace)
             foreach ($videoUrls as $videoUrl) {
                 $videoUrl = is_string($videoUrl) ? trim($videoUrl) : '';
                 if (empty($videoUrl)) {

@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
@@ -57,9 +58,39 @@ class StoreProjectRequest extends FormRequest
             ],
             'gallery_images' => 'nullable|array|max:10',
             'gallery_images.*' => 'image|mimes:jpeg,png,jpg,webp|extensions:jpg,jpeg,png,webp|max:10240',
+            'temp_gallery_images' => 'nullable|array|max:10',
+            'temp_gallery_images.*' => [
+                'required',
+                'string',
+                'max:255',
+                'starts_with:projects/temp-gallery/',
+                function ($attribute, $value, $fail) {
+                    $filename = basename(str_replace('\\', '/', (string) $value));
+                    if (! Storage::disk('public')->exists('projects/temp-gallery/'.$filename)) {
+                        $fail("Temporary gallery photo [{$filename}] does not exist or has expired.");
+                    }
+                },
+            ],
             'gallery_videos' => 'nullable|array',
-            'gallery_videos.*' => ['nullable', 'string', 'url', 'regex:/^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/i'],
+            'gallery_videos.*' => ['nullable', 'string', 'url', 'regex:/^https?:\/\/((www|m)\.)?(youtube\.com\/(watch\?.*v=|embed\/|shorts\/|live\/)|youtu\.be\/)[\w\-]+/i'],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('gallery_videos') && is_array($this->gallery_videos)) {
+            $normalizedVideos = [];
+            foreach ($this->gallery_videos as $video) {
+                if (is_string($video)) {
+                    $video = trim($video);
+                    if ($video !== '' && ! preg_match('/^https?:\/\//i', $video)) {
+                        $video = 'https://'.$video;
+                    }
+                }
+                $normalizedVideos[] = $video;
+            }
+            $this->merge(['gallery_videos' => $normalizedVideos]);
+        }
     }
 
     public function messages(): array
@@ -88,10 +119,14 @@ class StoreProjectRequest extends FormRequest
     {
         $validator->after(function (Validator $validator) {
             $uploadedImages = $this->file('gallery_images', []);
+            $tempImages = $this->input('temp_gallery_images', []);
             $videoUrls = array_filter($this->input('gallery_videos', []), fn ($v) => ! empty(trim((string) $v)));
 
-            if (count($uploadedImages) + count($videoUrls) > 10) {
+            if (count($uploadedImages) + count($tempImages) + count($videoUrls) > 10) {
                 $validator->errors()->add('gallery_images', 'Gallery may not contain more than 10 total items (photos and videos combined).');
+                if (count($videoUrls) > 0) {
+                    $validator->errors()->add('gallery_videos', 'Gallery may not contain more than 10 total items (photos and videos combined).');
+                }
             }
         });
     }

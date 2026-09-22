@@ -50,9 +50,9 @@ class ProjectImage extends Model
             }
         }
 
-        // youtube.com (standard, shorts, embed, mobile)
+        // youtube.com (standard, shorts, embed, mobile, live)
         if (str_contains($host, 'youtube.com')) {
-            if (preg_match('#^/(?:shorts|embed|v)/([a-zA-Z0-9_-]{11})#', $path, $matches)) {
+            if (preg_match('#^/(?:shorts|embed|v|live)/([a-zA-Z0-9_-]{11})#', $path, $matches)) {
                 return $matches[1];
             }
 
@@ -77,11 +77,8 @@ class ProjectImage extends Model
         }
 
         $id = self::extractYouTubeId($this->video_url);
-        if ($id) {
-            return "https://www.youtube-nocookie.com/embed/{$id}?rel=0";
-        }
 
-        return $this->video_url;
+        return $id ? "https://www.youtube-nocookie.com/embed/{$id}?rel=0" : null;
     }
 
     /**

@@ -6,12 +6,35 @@
 @section('content')
     @include('layouts.partials/page-title', ['subtitle' => 'CMS SJA', 'title' => 'Add Project'])
 
+    @if ($errors->any())
+        <div id="global-error-banner" class="mb-5 rounded-lg border border-rose-500/20 bg-rose-500/10 p-4 text-rose-700 dark:text-rose-400 shadow-sm animate-in fade-in">
+            <div class="flex items-start gap-3">
+                <div class="rounded-full bg-rose-500/20 p-2 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5">
+                    <i data-lucide="alert-circle" class="size-5"></i>
+                </div>
+                <div class="flex-1 text-sm">
+                    <h6 class="font-semibold text-rose-800 dark:text-rose-300 text-base mb-1">
+                        Terdapat {{ $errors->count() }} kesalahan validasi formulir:
+                    </h6>
+                    <ul class="list-disc list-inside space-y-1 text-xs text-rose-700 dark:text-rose-300">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                    <p class="mt-2 text-xs text-rose-600/80 dark:text-rose-400/80">
+                        Silakan periksa dan perbaiki field terkait di bawah ini sebelum menyimpan kembali.
+                    </p>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <div class="card">
         <div class="card-header">
             <h6 class="card-title text-base font-semibold text-default-800">Add New Project</h6>
         </div>
         <div class="card-body">
-            <form method="POST" action="{{ route('projects.store') }}" enctype="multipart/form-data" class="space-y-5">
+            <form id="project-form" method="POST" action="{{ route('projects.store') }}" enctype="multipart/form-data" class="space-y-5">
                 @csrf
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -141,6 +164,12 @@
                     <input class="form-input p-1.5" id="image" name="image" type="file"
                         accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" required />
                     <x-input-error :messages="$errors->get('image')" class="mt-2" />
+                    @if ($errors->any())
+                        <p class="text-xs text-amber-600 dark:text-amber-400 mt-1.5 flex items-center gap-1">
+                            <i data-lucide="alert-triangle" class="size-3.5 inline"></i>
+                            Pilih ulang file gambar utama jika form sebelumnya mengalami kesalahan validasi (kebijakan keamanan browser).
+                        </p>
+                    @endif
                 </div>
 
                 <!-- SEO Image Studio Helper Callout -->
@@ -171,6 +200,15 @@
                         <div id="gallery-preview"
                             class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-4 hidden">
                             <!-- JS will inject previews here -->
+                        </div>
+
+                        <!-- Container for Old Uploaded Temporary Images (if validation failed) -->
+                        <div id="persisted-temp-images-container">
+                            @if(old('temp_gallery_images'))
+                                @foreach(old('temp_gallery_images') as $tempImg)
+                                    <input type="hidden" name="temp_gallery_images[]" value="{{ $tempImg }}" data-temp-path="{{ $tempImg }}">
+                                @endforeach
+                            @endif
                         </div>
 
                         <p class="text-xs text-default-400 mt-2">You can select multiple files at once. Combined gallery quota: max 10 items (photos + videos). Up to 4MB each for photos, max resolution 4096×4096px. Format: JPG, PNG, WEBP.</p>
@@ -214,16 +252,19 @@
                             $oldVideos = old('gallery_videos', ['']);
                         @endphp
                         @foreach($oldVideos as $index => $videoVal)
-                            <div class="video-input-row flex items-center gap-2">
-                                <div class="relative flex-1">
-                                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-default-400">
-                                        <i class="size-4" data-lucide="youtube"></i>
-                                    </span>
-                                    <input type="url" name="gallery_videos[]" value="{{ $videoVal }}" placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..." class="form-input pl-9 text-sm">
+                            <div class="video-input-group space-y-2 p-3 rounded-lg border border-default-200 bg-default-50/50">
+                                <div class="video-input-row flex items-center gap-2">
+                                    <div class="relative flex-1">
+                                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-default-400">
+                                            <i class="size-4 text-danger" data-lucide="youtube"></i>
+                                        </span>
+                                        <input type="url" name="gallery_videos[]" value="{{ $videoVal }}" placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..." class="form-input youtube-url-input pl-9 text-sm">
+                                    </div>
+                                    <button type="button" class="remove-video-row-btn p-2 text-default-400 hover:text-danger rounded border border-default-200 hover:border-danger/30 transition-colors {{ count($oldVideos) <= 1 && empty($videoVal) ? 'hidden' : '' }}" title="Remove link">
+                                        <i class="size-4" data-lucide="trash-2"></i>
+                                    </button>
                                 </div>
-                                <button type="button" class="remove-video-row-btn p-2 text-default-400 hover:text-danger rounded border border-default-200 hover:border-danger/30 transition-colors {{ count($oldVideos) <= 1 && empty($videoVal) ? 'hidden' : '' }}" title="Remove link">
-                                    <i class="size-4" data-lucide="trash-2"></i>
-                                </button>
+                                <div class="youtube-preview-card hidden rounded-lg border border-default-200 bg-card p-2.5 text-xs flex items-center gap-3"></div>
                             </div>
                         @endforeach
                     </div>
@@ -339,9 +380,65 @@
                 <div class="flex justify-end gap-3 pt-4 border-t border-default-200">
                     <a href="{{ route('projects.index') }}"
                         class="btn border border-default-300 text-default-700 hover:bg-default-150 cursor-pointer">Cancel</a>
-                    <button type="submit" class="btn bg-primary text-white cursor-pointer">Save Project</button>
+                    <button type="submit" id="save-project-btn" class="btn bg-primary text-white cursor-pointer flex items-center gap-1.5">
+                        <i data-lucide="check" class="size-4"></i> Save Project
+                    </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Upload Progress Modal -->
+    <div id="upload-progress-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden transition-opacity">
+        <div class="bg-card w-full max-w-lg rounded-xl border border-default-200 shadow-2xl p-6 space-y-4 animate-in fade-in zoom-in-95 duration-200">
+            <div class="flex items-center justify-between border-b border-default-200 pb-3">
+                <div class="flex items-center gap-2.5">
+                    <div class="p-2 rounded-lg bg-primary/10 text-primary">
+                        <i data-lucide="upload-cloud" class="size-5"></i>
+                    </div>
+                    <div>
+                        <h5 class="text-base font-semibold text-default-900">Mengunggah Foto Galeri</h5>
+                        <p class="text-xs text-default-500">Proses unggah bertahap untuk menjaga stabilitas data</p>
+                    </div>
+                </div>
+                <span id="modal-percentage-badge" class="px-2.5 py-1 text-xs font-bold rounded-full bg-primary/10 text-primary">0%</span>
+            </div>
+
+            <!-- Overall Progress Bar -->
+            <div class="space-y-1.5">
+                <div class="flex justify-between text-xs text-default-600 font-medium">
+                    <span id="modal-status-text">Menyiapkan antrean foto...</span>
+                    <span id="modal-count-text">0 / 0</span>
+                </div>
+                <div class="w-full h-2.5 bg-default-100 rounded-full overflow-hidden">
+                    <div id="modal-progress-bar" class="h-full bg-primary transition-all duration-300 ease-out rounded-full" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Active File Progress Info -->
+            <div id="modal-active-file-box" class="p-3 bg-default-50 rounded-lg border border-default-200 text-xs flex items-center justify-between">
+                <div class="flex items-center gap-2 truncate max-w-[80%]">
+                    <i data-lucide="file-image" class="size-4 text-primary shrink-0"></i>
+                    <span id="modal-active-file-name" class="truncate font-medium text-default-700">Foto 1.jpg</span>
+                </div>
+                <span id="modal-active-file-status" class="text-default-500 shrink-0 font-medium">0%</span>
+            </div>
+
+            <!-- Error Action Panel -->
+            <div id="modal-error-panel" class="hidden p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg text-xs space-y-2">
+                <div class="flex items-start gap-2 text-rose-600 dark:text-rose-400">
+                    <i data-lucide="alert-triangle" class="size-4 shrink-0 mt-0.5"></i>
+                    <span id="modal-error-message">Gagal mengunggah foto. Koneksi terputus atau file tidak valid.</span>
+                </div>
+                <div class="flex justify-end gap-2 pt-1">
+                    <button type="button" id="modal-skip-btn" class="px-3 py-1.5 rounded bg-default-200 hover:bg-default-300 text-default-800 font-medium text-xs transition-colors cursor-pointer">
+                        Lewati & Lanjutkan Simpan
+                    </button>
+                    <button type="button" id="modal-retry-btn" class="px-3 py-1.5 rounded bg-rose-600 hover:bg-rose-700 text-white font-medium text-xs transition-colors cursor-pointer flex items-center gap-1">
+                        <i data-lucide="refresh-cw" class="size-3"></i> Coba Lagi
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 @endsection
@@ -506,17 +603,115 @@
                 }
             }
 
+            // YouTube URL Normalizer & Live Preview Helper
+            function extractYouTubeVideoId(url) {
+                if (!url) return null;
+                url = url.trim();
+                if (!/^https?:\/\//i.test(url)) {
+                    url = 'https://' + url;
+                }
+                try {
+                    const parsed = new URL(url);
+                    const host = parsed.hostname.toLowerCase();
+                    if (host === 'youtu.be' || host.endsWith('.youtu.be')) {
+                        const id = parsed.pathname.slice(1).split('/')[0];
+                        return /^[a-zA-Z0-9_-]{11}$/.test(id) ? id : null;
+                    }
+                    if (host.includes('youtube.com')) {
+                        const path = parsed.pathname;
+                        const match = path.match(/^\/(?:shorts|embed|v|live)\/([a-zA-Z0-9_-]{11})/i);
+                        if (match) return match[1];
+                        const v = parsed.searchParams.get('v');
+                        if (v && /^[a-zA-Z0-9_-]{11}$/.test(v)) return v;
+                    }
+                } catch(e) {}
+                return null;
+            }
+
+            function updateYouTubePreview(input) {
+                const group = input.closest('.video-input-group');
+                if (!group) return;
+                const previewCard = group.querySelector('.youtube-preview-card');
+                if (!previewCard) return;
+
+                let val = input.value.trim();
+                if (!val) {
+                    previewCard.classList.add('hidden');
+                    previewCard.innerHTML = '';
+                    return;
+                }
+
+                const videoId = extractYouTubeVideoId(val);
+                if (videoId) {
+                    previewCard.innerHTML = `
+                        <img src="https://img.youtube.com/vi/${videoId}/hqdefault.jpg" class="w-20 h-12 object-cover rounded border border-default-200 shrink-0" alt="Video Thumbnail" onerror="this.src='https://img.youtube.com/vi/${videoId}/default.jpg'">
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-1.5 font-medium text-success text-xs">
+                                <i data-lucide="check-circle" class="size-3.5"></i>
+                                <span>URL YouTube Terverifikasi</span>
+                            </div>
+                            <a href="https://www.youtube.com/watch?v=${videoId}" target="_blank" rel="noopener noreferrer" class="text-[11px] text-primary hover:underline flex items-center gap-1 mt-0.5 truncate">
+                                Buka Video di YouTube <i data-lucide="external-link" class="size-3"></i>
+                            </a>
+                        </div>
+                    `;
+                    previewCard.classList.remove('hidden');
+                } else {
+                    previewCard.innerHTML = `
+                        <div class="flex items-center gap-1.5 text-danger font-medium text-xs">
+                            <i data-lucide="alert-circle" class="size-4 shrink-0"></i>
+                            <span>Format URL YouTube tidak valid. Gunakan format youtube.com/watch?v=... atau youtu.be/...</span>
+                        </div>
+                    `;
+                    previewCard.classList.remove('hidden');
+                }
+
+                if (window.lucide && typeof window.lucide.createIcons === 'function') {
+                    window.lucide.createIcons({ root: previewCard });
+                }
+            }
+
+            // Render Persisted Temporary Images from previous validation failure
+            const persistedContainer = document.getElementById('persisted-temp-images-container');
+            const persistedInputs = persistedContainer ? Array.from(persistedContainer.querySelectorAll('input[name="temp_gallery_images[]"]')) : [];
+            if (persistedInputs.length > 0 && previewArea) {
+                previewArea.classList.remove('hidden');
+                persistedInputs.forEach((input) => {
+                    const tempPath = input.value;
+                    const div = document.createElement('div');
+                    div.className = 'relative rounded overflow-hidden aspect-square border-2 border-primary/40 shadow-sm bg-default-100 group';
+                    div.innerHTML = `
+                        <img src="/storage/${tempPath}" class="w-full h-full object-cover" alt="Uploaded Photo" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'40\\' height=\\'40\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'%23888\\' stroke-width=\\'2\\'><rect width=\\'18\\' height=\\'18\\' x=\\'3\\' y=\\'3\\' rx=\\'2\\'/><circle cx=\\'9\\' cy=\\'9\\' r=\\'2\\'/><path d=\\'m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21\\'/></svg>'">
+                        <span class="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-primary text-white shadow">Uploaded</span>
+                        <button type="button" class="remove-persisted-temp-btn absolute top-1.5 right-1.5 size-6 rounded-full bg-danger text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shadow hover:bg-danger/80" title="Remove photo">
+                            <i data-lucide="x" class="size-3.5"></i>
+                        </button>
+                    `;
+                    div.querySelector('.remove-persisted-temp-btn').addEventListener('click', () => {
+                        input.remove();
+                        div.remove();
+                        if (previewArea.children.length === 0) {
+                            previewArea.classList.add('hidden');
+                        }
+                    });
+                    previewArea.appendChild(div);
+                });
+                if (window.lucide && typeof window.lucide.createIcons === 'function') {
+                    window.lucide.createIcons({ root: previewArea });
+                }
+            }
+
             // Dynamic Video Links Repeater
             const videoContainer = document.getElementById('video-inputs-container');
             const addVideoBtn = document.getElementById('add-video-btn');
 
             if (addVideoBtn && videoContainer) {
                 const updateRemoveButtons = () => {
-                    const rows = videoContainer.querySelectorAll('.video-input-row');
-                    rows.forEach(r => {
-                        const btn = r.querySelector('.remove-video-row-btn');
-                        const val = r.querySelector('input').value;
-                        if (rows.length === 1 && !val) {
+                    const groups = videoContainer.querySelectorAll('.video-input-group');
+                    groups.forEach(g => {
+                        const btn = g.querySelector('.remove-video-row-btn');
+                        const val = g.querySelector('input').value;
+                        if (groups.length === 1 && !val) {
                             btn.classList.add('hidden');
                         } else {
                             btn.classList.remove('hidden');
@@ -525,29 +720,34 @@
                 };
 
                 addVideoBtn.addEventListener('click', () => {
-                    const rows = videoContainer.querySelectorAll('.video-input-row');
-                    if (rows.length >= 10) {
-                        alert('Combined gallery quota is maximum 10 items.');
+                    const groups = videoContainer.querySelectorAll('.video-input-group');
+                    const persistedTempCount = document.querySelectorAll('input[name="temp_gallery_images[]"]').length;
+                    const galleryFilesCount = fileInput && fileInput.files ? fileInput.files.length : 0;
+                    if (groups.length + persistedTempCount + galleryFilesCount >= 10) {
+                        alert('Combined gallery quota is maximum 10 items (photos and videos combined).');
                         return;
                     }
 
-                    const newRow = document.createElement('div');
-                    newRow.className = 'video-input-row flex items-center gap-2';
-                    newRow.innerHTML = `
-                        <div class="relative flex-1">
-                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-default-400">
-                                <i class="size-4" data-lucide="youtube"></i>
-                            </span>
-                            <input type="url" name="gallery_videos[]" value="" placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..." class="form-input pl-9 text-sm">
+                    const newGroup = document.createElement('div');
+                    newGroup.className = 'video-input-group space-y-2 p-3 rounded-lg border border-default-200 bg-default-50/50';
+                    newGroup.innerHTML = `
+                        <div class="video-input-row flex items-center gap-2">
+                            <div class="relative flex-1">
+                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-default-400">
+                                    <i class="size-4 text-danger" data-lucide="youtube"></i>
+                                </span>
+                                <input type="url" name="gallery_videos[]" value="" placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..." class="form-input youtube-url-input pl-9 text-sm">
+                            </div>
+                            <button type="button" class="remove-video-row-btn p-2 text-default-400 hover:text-danger rounded border border-default-200 hover:border-danger/30 transition-colors" title="Remove link">
+                                <i class="size-4" data-lucide="trash-2"></i>
+                            </button>
                         </div>
-                        <button type="button" class="remove-video-row-btn p-2 text-default-400 hover:text-danger rounded border border-default-200 hover:border-danger/30 transition-colors" title="Remove link">
-                            <i class="size-4" data-lucide="trash-2"></i>
-                        </button>
+                        <div class="youtube-preview-card hidden rounded-lg border border-default-200 bg-card p-2.5 text-xs flex items-center gap-3"></div>
                     `;
-                    videoContainer.appendChild(newRow);
+                    videoContainer.appendChild(newGroup);
 
                     if (window.lucide && typeof window.lucide.createIcons === 'function') {
-                        window.lucide.createIcons({ root: newRow });
+                        window.lucide.createIcons({ root: newGroup });
                     }
                     updateRemoveButtons();
                 });
@@ -555,11 +755,13 @@
                 videoContainer.addEventListener('click', (e) => {
                     const removeBtn = e.target.closest('.remove-video-row-btn');
                     if (removeBtn) {
-                        const row = removeBtn.closest('.video-input-row');
-                        if (videoContainer.querySelectorAll('.video-input-row').length > 1) {
-                            row.remove();
+                        const group = removeBtn.closest('.video-input-group');
+                        if (videoContainer.querySelectorAll('.video-input-group').length > 1) {
+                            group.remove();
                         } else {
-                            row.querySelector('input').value = '';
+                            const input = group.querySelector('input');
+                            input.value = '';
+                            updateYouTubePreview(input);
                         }
                         updateRemoveButtons();
                     }
@@ -568,9 +770,230 @@
                 videoContainer.addEventListener('input', (e) => {
                     if (e.target.matches('input[name="gallery_videos[]"]')) {
                         updateRemoveButtons();
+                        updateYouTubePreview(e.target);
+                    }
+                });
+
+                videoContainer.addEventListener('blur', (e) => {
+                    if (e.target.matches('input[name="gallery_videos[]"]')) {
+                        let val = e.target.value.trim();
+                        if (val && !/^https?:\/\//i.test(val) && (val.includes('youtube.com') || val.includes('youtu.be'))) {
+                            e.target.value = 'https://' + val;
+                        }
+                        updateYouTubePreview(e.target);
+                    }
+                }, true);
+
+                // Initial preview render for existing values
+                videoContainer.querySelectorAll('input[name="gallery_videos[]"]').forEach(input => {
+                    if (input.value.trim()) {
+                        updateYouTubePreview(input);
                     }
                 });
             }
+
+            // Staged Asynchronous Gallery Upload Orchestration
+            const projectForm = document.getElementById('project-form');
+            const uploadModal = document.getElementById('upload-progress-modal');
+            const modalProgressBar = document.getElementById('modal-progress-bar');
+            const modalPercentageBadge = document.getElementById('modal-percentage-badge');
+            const modalStatusText = document.getElementById('modal-status-text');
+            const modalCountText = document.getElementById('modal-count-text');
+            const modalActiveFileName = document.getElementById('modal-active-file-name');
+            const modalActiveFileStatus = document.getElementById('modal-active-file-status');
+            const modalErrorPanel = document.getElementById('modal-error-panel');
+            const modalErrorMessage = document.getElementById('modal-error-message');
+            const modalRetryBtn = document.getElementById('modal-retry-btn');
+            const modalSkipBtn = document.getElementById('modal-skip-btn');
+
+            let isStagedUploading = false;
+
+            if (projectForm) {
+                projectForm.addEventListener('submit', function(e) {
+                    // Prevent double submission if upload is in progress
+                    if (isStagedUploading) {
+                        e.preventDefault();
+                        return;
+                    }
+
+                    if (!projectForm.checkValidity()) {
+                        projectForm.reportValidity();
+                        return;
+                    }
+
+                    // Holistic Quota Check before initiating uploads
+                    const persistedTempCount = document.querySelectorAll('input[name="temp_gallery_images[]"]').length;
+                    const galleryFiles = fileInput && fileInput.files ? Array.from(fileInput.files) : [];
+                    const activeVideoLinks = Array.from(document.querySelectorAll('input[name="gallery_videos[]"]'))
+                        .filter(input => input.value.trim() !== '');
+
+                    const totalItems = persistedTempCount + galleryFiles.length + activeVideoLinks.length;
+                    if (totalItems > 10) {
+                        e.preventDefault();
+                        alert(`Total gallery quota is max 10 items (photos and videos combined). Currently proposed: ${totalItems} items (${persistedTempCount + galleryFiles.length} photos and ${activeVideoLinks.length} videos). Please reduce items.`);
+                        return;
+                    }
+
+                    if (galleryFiles.length === 0) {
+                        const saveBtn = document.getElementById('save-project-btn');
+                        if (saveBtn) {
+                            saveBtn.disabled = true;
+                            saveBtn.classList.add('opacity-70', 'cursor-not-allowed');
+                        }
+                        return; // Proceed with native form submit
+                    }
+
+                    e.preventDefault();
+                    isStagedUploading = true;
+                    const saveBtn = document.getElementById('save-project-btn');
+                    if (saveBtn) {
+                        saveBtn.disabled = true;
+                        saveBtn.classList.add('opacity-70', 'cursor-not-allowed');
+                    }
+
+                    if (uploadModal) {
+                        uploadModal.classList.remove('hidden');
+                        if (window.lucide && typeof window.lucide.createIcons === 'function') {
+                            window.lucide.createIcons({ root: uploadModal });
+                        }
+                    }
+
+                    let currentIndex = 0;
+                    const totalFiles = galleryFiles.length;
+                    const tempPaths = [];
+
+                    function uploadNextFile() {
+                        if (currentIndex >= totalFiles) {
+                            if (modalStatusText) modalStatusText.textContent = 'Menyimpan data proyek...';
+                            if (modalProgressBar) modalProgressBar.style.width = '100%';
+                            if (modalPercentageBadge) modalPercentageBadge.textContent = '100%';
+
+                            tempPaths.forEach(p => {
+                                const hidden = document.createElement('input');
+                                hidden.type = 'hidden';
+                                hidden.name = 'temp_gallery_images[]';
+                                hidden.value = p;
+                                projectForm.appendChild(hidden);
+                            });
+
+                            fileInput.value = '';
+                            projectForm.submit();
+                            return;
+                        }
+
+                        const file = galleryFiles[currentIndex];
+                        if (modalCountText) modalCountText.textContent = `${currentIndex + 1} / ${totalFiles}`;
+                        if (modalActiveFileName) modalActiveFileName.textContent = file.name;
+                        if (modalActiveFileStatus) modalActiveFileStatus.textContent = '0%';
+                        if (modalStatusText) modalStatusText.textContent = `Mengunggah foto (${currentIndex + 1} dari ${totalFiles})`;
+                        if (modalErrorPanel) modalErrorPanel.classList.add('hidden');
+
+                        const overallPercentBefore = Math.round((currentIndex / totalFiles) * 100);
+                        if (modalProgressBar) modalProgressBar.style.width = `${overallPercentBefore}%`;
+                        if (modalPercentageBadge) modalPercentageBadge.textContent = `${overallPercentBefore}%`;
+
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        const tokenEl = document.querySelector('input[name="_token"]');
+                        if (tokenEl) formData.append('_token', tokenEl.value);
+
+                        const xhr = new XMLHttpRequest();
+                        xhr.open('POST', '{{ route("projects.upload-temp-gallery") }}', true);
+                        xhr.setRequestHeader('Accept', 'application/json');
+                        xhr.timeout = 60000;
+
+                        xhr.upload.onprogress = function(event) {
+                            if (event.lengthComputable) {
+                                const filePercent = Math.round((event.loaded / event.total) * 100);
+                                if (modalActiveFileStatus) modalActiveFileStatus.textContent = `${filePercent}%`;
+                                const totalPercent = Math.round(((currentIndex + (event.loaded / event.total)) / totalFiles) * 100);
+                                if (modalProgressBar) modalProgressBar.style.width = `${totalPercent}%`;
+                                if (modalPercentageBadge) modalPercentageBadge.textContent = `${totalPercent}%`;
+                            }
+                        };
+
+                        xhr.onload = function() {
+                            if (xhr.status === 200) {
+                                try {
+                                    const res = JSON.parse(xhr.responseText);
+                                    if (res.status === 'success' && res.temp_path) {
+                                        tempPaths.push(res.temp_path);
+                                        currentIndex++;
+                                        uploadNextFile();
+                                        return;
+                                    }
+                                } catch(err) {}
+                            }
+                            handleUploadError(xhr);
+                        };
+
+                        xhr.onerror = function() {
+                            handleUploadError(xhr);
+                        };
+
+                        xhr.ontimeout = function() {
+                            handleUploadError({ status: 408, responseText: JSON.stringify({ message: `Waktu unggah foto ${file.name} habis (timeout). Periksa koneksi internet Anda.` }) });
+                        };
+
+                        function handleUploadError(xhr) {
+                            let msg = `Gagal mengunggah ${file.name}. Silakan coba lagi.`;
+                            if (xhr.status === 419) {
+                                msg = 'Sesi Anda telah kedaluwarsa (CSRF token expired). Silakan muat ulang halaman.';
+                            } else {
+                                try {
+                                    const res = JSON.parse(xhr.responseText);
+                                    if (res.message) msg = res.message;
+                                } catch(err) {}
+                            }
+
+                            if (modalErrorMessage) modalErrorMessage.textContent = msg;
+                            if (modalErrorPanel) modalErrorPanel.classList.remove('hidden');
+                            if (modalActiveFileStatus) modalActiveFileStatus.textContent = 'Gagal';
+                            if (window.lucide && typeof window.lucide.createIcons === 'function' && modalErrorPanel) {
+                                window.lucide.createIcons({ root: modalErrorPanel });
+                            }
+
+                            if (modalRetryBtn) {
+                                if (xhr.status === 419) {
+                                    modalRetryBtn.classList.add('hidden');
+                                } else {
+                                    modalRetryBtn.classList.remove('hidden');
+                                    modalRetryBtn.onclick = function() {
+                                        uploadNextFile();
+                                    };
+                                }
+                            }
+
+                            if (modalSkipBtn) {
+                                modalSkipBtn.onclick = function() {
+                                    currentIndex++;
+                                    uploadNextFile();
+                                };
+                            }
+                        }
+
+                        xhr.send(formData);
+                    }
+
+                    uploadNextFile();
+                });
+            }
+
+            // Auto-scroll to first invalid element if validation failed
+            @if ($errors->any())
+                const firstInvalidField = document.querySelector('.has-error input, .has-error textarea, .has-error select, input:invalid, .border-danger, [aria-invalid="true"]');
+                if (firstInvalidField) {
+                    setTimeout(() => {
+                        firstInvalidField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        firstInvalidField.focus();
+                    }, 150);
+                } else {
+                    const errorBanner = document.getElementById('global-error-banner');
+                    if (errorBanner) {
+                        errorBanner.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }
+            @endif
 
             // Slug Auto-generation
             const titleInput = document.getElementById('title');
