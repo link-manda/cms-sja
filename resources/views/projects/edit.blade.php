@@ -125,6 +125,9 @@
                     <x-input-error :messages="$errors->get('image')" class="mt-2" />
                 </div>
 
+                <!-- SEO Image Studio Helper Callout -->
+                <x-seo-image-studio-callout />
+
                 <!-- Add Gallery Photos -->
                 <div class="border-t border-default-200 pt-5">
                     <h6 class="text-sm font-semibold text-default-800 mb-4 flex items-center gap-1">
