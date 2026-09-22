@@ -262,7 +262,7 @@
                                 Offer Type <span class="text-danger">*</span>
                             </label>
                             <select id="property_type" name="property_type"
-                                class="w-full border-default-300 rounded-md shadow-sm focus:border-primary focus:ring-primary">
+                                class="form-input">
                                 <option value="">-- Select Type --</option>
                                 <option value="Sale" {{ old('property_type') == 'Sale' ? 'selected' : '' }}>For Sale (Unit/Land)</option>
                                 <option value="Investment" {{ old('property_type') == 'Investment' ? 'selected' : '' }}>For Investment (Commercial Property)</option>
@@ -275,7 +275,7 @@
                         <div>
                             <label class="block text-sm font-medium text-default-700 mb-1" for="price">Price (IDR)</label>
                             <input type="number" id="price" name="price" placeholder="Example: 1500000" value="{{ old('price') }}"
-                                class="w-full border-default-300 rounded-md shadow-sm focus:border-primary focus:ring-primary">
+                                class="form-input">
                             <span class="text-xs text-default-500">Numbers only without dots (e.g., 1500000)</span>
                             <x-input-error :messages="$errors->get('price')" class="mt-1" />
                         </div>
@@ -292,7 +292,7 @@
                             </label>
                             <textarea id="roi_estimation" name="roi_estimation" rows="3"
                                 placeholder="e.g. Projected ROI 12% per year with estimated payback period within 5-6 years."
-                                class="w-full border-default-300 rounded-md shadow-sm focus:border-primary focus:ring-primary">{{ old('roi_estimation') }}</textarea>
+                                class="form-input">{{ old('roi_estimation') }}</textarea>
                             <x-input-error :messages="$errors->get('roi_estimation')" class="mt-1" />
                         </div>
 
