@@ -17,6 +17,12 @@ import 'simplebar';
 import { createIcons, icons } from 'lucide';
 createIcons({ icons });
 
+// Expose lucide wrapper globally for dynamic Blade components
+window.lucide = {
+    createIcons: (options = {}) => createIcons({ icons, ...options }),
+    icons,
+};
+
 import Alpine from 'alpinejs';
 window.Alpine = Alpine;
 Alpine.start();

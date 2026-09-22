@@ -143,7 +143,6 @@
         const modalMethod = document.getElementById('modal-method');
         const modalSubmitBtn = document.getElementById('modal-submit-btn');
         const modalIconContainer = document.getElementById('modal-icon-container');
-        const modalIcon = document.getElementById('modal-icon');
 
         actionButtons.forEach(button => {
             button.addEventListener('click', function () {
@@ -161,9 +160,10 @@
                     
                     // Update Icon to Success
                     modalIconContainer.className = 'inline-flex justify-center items-center size-[62px] rounded-full border-4 border-success/20 bg-success/10 text-success mb-4';
-                    // Re-init lucide if needed, or just set raw SVG (simplified here for Lucide)
-                    modalIcon.setAttribute('data-lucide', 'rotate-ccw');
-                    lucide.createIcons();
+                    modalIconContainer.innerHTML = '<i class="size-6" data-lucide="rotate-ccw"></i>';
+                    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+                        window.lucide.createIcons({ root: modalIconContainer });
+                    }
                 } else if (actionType === 'force-delete') {
                     modalMethod.value = 'DELETE';
                     modalTitle.textContent = 'Delete Permanently?';
@@ -173,8 +173,10 @@
                     
                     // Update Icon to Danger
                     modalIconContainer.className = 'inline-flex justify-center items-center size-[62px] rounded-full border-4 border-danger/20 bg-danger/10 text-danger mb-4';
-                    modalIcon.setAttribute('data-lucide', 'trash-2');
-                    lucide.createIcons();
+                    modalIconContainer.innerHTML = '<i class="size-6" data-lucide="trash-2"></i>';
+                    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+                        window.lucide.createIcons({ root: modalIconContainer });
+                    }
                 }
             });
         });
