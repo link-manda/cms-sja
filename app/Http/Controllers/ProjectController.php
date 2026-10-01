@@ -11,6 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
@@ -101,6 +102,72 @@ class ProjectController extends Controller
             'status' => 'success',
             'temp_path' => $path,
             'filename' => $filename,
+        ]);
+    }
+
+    /**
+     * Menghasilkan presigned S3 PUT URL untuk unggah video showcase langsung ke Cloudflare R2.
+     */
+    public function presignVideoUpload(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'filename' => 'required|string|max:255',
+            'file_size' => 'required|integer|min:1|max:52428800', // max 50 MB (50 * 1024 * 1024 bytes)
+            'mime_type' => 'required|string|in:video/mp4,video/webm',
+        ], [
+            'filename.required' => 'Nama berkas video wajib disediakan.',
+            'file_size.required' => 'Ukuran berkas video wajib disediakan.',
+            'file_size.max' => 'Ukuran berkas video maksimal 50 MB.',
+            'mime_type.required' => 'Tipe format video wajib disediakan.',
+            'mime_type.in' => 'Format video yang didukung hanya MP4 dan WebM.',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $validator->errors()->first(),
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $extension = strtolower(pathinfo($request->input('filename'), PATHINFO_EXTENSION));
+        if (! in_array($extension, ['mp4', 'webm'], true)) {
+            $extension = $request->input('mime_type') === 'video/webm' ? 'webm' : 'mp4';
+        }
+
+        $key = 'projects/videos/'.Str::random(40).'.'.$extension;
+        $mimeType = $request->input('mime_type');
+
+        try {
+            $res = Storage::disk('r2')->temporaryUploadUrl(
+                $key,
+                now()->addMinutes(20),
+                ['ContentType' => $mimeType]
+            );
+
+            $uploadUrl = is_array($res) ? ($res['url'] ?? '') : (string) $res;
+            $uploadHeaders = is_array($res) ? ($res['headers'] ?? []) : [];
+        } catch (\Throwable $e) {
+            Log::error('Gagal membuat presigned upload URL R2: '.$e->getMessage(), [
+                'exception' => $e,
+                'key' => $key,
+            ]);
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to generate presigned upload URL for Cloudflare R2. Please ensure R2 storage is properly configured.',
+            ], 500);
+        }
+
+        $baseUrl = rtrim(config('filesystems.disks.r2.url', ''), '/');
+        $publicUrl = ! empty($baseUrl) ? $baseUrl.'/'.$key : Storage::disk('r2')->url($key);
+
+        return response()->json([
+            'status' => 'success',
+            'upload_url' => $uploadUrl,
+            'upload_headers' => $uploadHeaders,
+            'key' => $key,
+            'public_url' => $publicUrl,
         ]);
     }
 

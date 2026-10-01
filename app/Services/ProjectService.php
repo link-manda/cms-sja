@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Project;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -34,12 +35,15 @@ class ProjectService
         $galleryImages = $data['gallery_images'] ?? [];
         $tempGalleryImages = $data['temp_gallery_images'] ?? [];
         $galleryVideos = $data['gallery_videos'] ?? [];
-        unset($data['gallery_images'], $data['temp_gallery_images'], $data['gallery_videos']);
+        $videoKey = $data['video_key'] ?? null;
+        $videoFileSize = isset($data['video_file_size']) ? (int) $data['video_file_size'] : null;
+        $videoMimeType = $data['video_mime_type'] ?? null;
+        unset($data['gallery_images'], $data['temp_gallery_images'], $data['gallery_videos'], $data['video_key'], $data['video_file_size'], $data['video_mime_type']);
 
         try {
-            return DB::transaction(function () use ($data, $galleryImages, $tempGalleryImages, $galleryVideos) {
+            return DB::transaction(function () use ($data, $galleryImages, $tempGalleryImages, $galleryVideos, $videoKey, $videoFileSize, $videoMimeType) {
                 $project = Project::create($data);
-                $this->storeGalleryMedia($project, $galleryImages, $galleryVideos, $tempGalleryImages);
+                $this->storeGalleryMedia($project, $galleryImages, $galleryVideos, $tempGalleryImages, $videoKey, $videoFileSize, $videoMimeType);
 
                 return $project;
             });
@@ -74,12 +78,15 @@ class ProjectService
         $galleryImages = $data['gallery_images'] ?? [];
         $tempGalleryImages = $data['temp_gallery_images'] ?? [];
         $galleryVideos = $data['gallery_videos'] ?? [];
-        unset($data['gallery_images'], $data['temp_gallery_images'], $data['gallery_videos']);
+        $videoKey = $data['video_key'] ?? null;
+        $videoFileSize = isset($data['video_file_size']) ? (int) $data['video_file_size'] : null;
+        $videoMimeType = $data['video_mime_type'] ?? null;
+        unset($data['gallery_images'], $data['temp_gallery_images'], $data['gallery_videos'], $data['video_key'], $data['video_file_size'], $data['video_mime_type']);
 
         try {
-            return DB::transaction(function () use ($project, $data, $galleryImages, $tempGalleryImages, $galleryVideos, $oldImageToDelete) {
+            return DB::transaction(function () use ($project, $data, $galleryImages, $tempGalleryImages, $galleryVideos, $oldImageToDelete, $videoKey, $videoFileSize, $videoMimeType) {
                 $updated = $project->update($data);
-                $this->storeGalleryMedia($project, $galleryImages, $galleryVideos, $tempGalleryImages);
+                $this->storeGalleryMedia($project, $galleryImages, $galleryVideos, $tempGalleryImages, $videoKey, $videoFileSize, $videoMimeType);
 
                 if ($oldImageToDelete) {
                     DB::afterCommit(function () use ($oldImageToDelete) {
@@ -130,7 +137,7 @@ class ProjectService
         return $data;
     }
 
-    private function storeGalleryMedia(Project $project, array $images, array $videoUrls = [], array $tempImages = []): void
+    private function storeGalleryMedia(Project $project, array $images, array $videoUrls = [], array $tempImages = [], ?string $videoKey = null, ?int $videoFileSize = null, ?string $videoMimeType = null): void
     {
         $storedPaths = [];
 
@@ -152,6 +159,7 @@ class ProjectService
 
                 $project->images()->create([
                     'type' => 'image',
+                    'storage_disk' => 'public',
                     'image_path' => $path,
                     'video_url' => null,
                 ]);
@@ -174,6 +182,7 @@ class ProjectService
 
                     $project->images()->create([
                         'type' => 'image',
+                        'storage_disk' => 'public',
                         'image_path' => $targetPath,
                         'video_url' => null,
                     ]);
@@ -189,9 +198,28 @@ class ProjectService
 
                 $project->images()->create([
                     'type' => 'video',
+                    'storage_disk' => 'public',
                     'image_path' => null,
                     'video_url' => $videoUrl,
                 ]);
+            }
+
+            // 4. Process Cloudflare R2 uploaded video showcase
+            if (! empty($videoKey)) {
+                $cleanVideoKey = str_replace('\\', '/', trim($videoKey));
+                $baseUrl = rtrim(config('filesystems.disks.r2.url', ''), '/');
+                $publicVideoUrl = ! empty($baseUrl) ? $baseUrl.'/'.$cleanVideoKey : Storage::disk('r2')->url($cleanVideoKey);
+
+                $project->images()->create([
+                    'type' => 'video',
+                    'storage_disk' => 'r2',
+                    'image_path' => $cleanVideoKey,
+                    'video_url' => $publicVideoUrl,
+                    'file_size' => $videoFileSize,
+                    'mime_type' => $videoMimeType ?: 'video/mp4',
+                ]);
+
+                app(R2StorageService::class)->invalidateCache();
             }
         } catch (Throwable $exception) {
             if (! empty($storedPaths)) {
@@ -205,14 +233,32 @@ class ProjectService
     public function deleteGalleryImage(Project $project, int $imageId): bool
     {
         $image = $project->images()->findOrFail($imageId);
+        $isR2 = $image->storage_disk === 'r2';
 
-        if ($image->type === 'image' && ! empty($image->image_path) && Storage::disk('public')->exists($image->image_path)) {
+        if ($isR2 && ! empty($image->image_path)) {
+            try {
+                if (Storage::disk('r2')->exists($image->image_path)) {
+                    Storage::disk('r2')->delete($image->image_path);
+                }
+            } catch (Throwable $e) {
+                Log::warning('Gagal menghapus file video dari Cloudflare R2: '.$e->getMessage(), [
+                    'image_id' => $imageId,
+                    'path' => $image->image_path,
+                ]);
+            }
+        } elseif ($image->type === 'image' && ! empty($image->image_path) && Storage::disk('public')->exists($image->image_path)) {
             if (! Storage::disk('public')->delete($image->image_path)) {
                 return false;
             }
         }
 
-        return (bool) $image->delete();
+        $deleted = (bool) $image->delete();
+
+        if ($deleted && $isR2) {
+            app(R2StorageService::class)->invalidateCache();
+        }
+
+        return $deleted;
     }
 
     /**
@@ -234,16 +280,33 @@ class ProjectService
             Storage::disk('public')->delete('projects/'.$project->image);
         }
 
-        // Hapus file gambar galeri dari disk (hanya untuk tipe image dengan image_path valid)
-        foreach ($project->images as $galleryImage) {
-            if ($galleryImage->type === 'image' && ! empty($galleryImage->image_path) && Storage::disk('public')->exists($galleryImage->image_path)) {
-                Storage::disk('public')->delete($galleryImage->image_path);
+        $hasR2 = false;
+
+        // Hapus file media galeri dari disk
+        foreach ($project->images as $galleryMedia) {
+            if ($galleryMedia->storage_disk === 'r2' && ! empty($galleryMedia->image_path)) {
+                $hasR2 = true;
+                try {
+                    if (Storage::disk('r2')->exists($galleryMedia->image_path)) {
+                        Storage::disk('r2')->delete($galleryMedia->image_path);
+                    }
+                } catch (Throwable $e) {
+                    Log::warning('Gagal menghapus file R2 saat force delete: '.$e->getMessage());
+                }
+            } elseif ($galleryMedia->type === 'image' && ! empty($galleryMedia->image_path) && Storage::disk('public')->exists($galleryMedia->image_path)) {
+                Storage::disk('public')->delete($galleryMedia->image_path);
             }
         }
 
         // Hapus record gallery (jika cascade on delete belum diset di database)
         $project->images()->delete();
 
-        return $project->forceDelete();
+        $result = $project->forceDelete();
+
+        if ($result && $hasR2) {
+            app(R2StorageService::class)->invalidateCache();
+        }
+
+        return $result;
     }
 }

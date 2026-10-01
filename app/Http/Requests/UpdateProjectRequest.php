@@ -76,6 +76,23 @@ class UpdateProjectRequest extends FormRequest
             ],
             'gallery_videos' => 'nullable|array',
             'gallery_videos.*' => ['nullable', 'string', 'url', 'regex:/^https?:\/\/((www|m)\.)?(youtube\.com\/(watch\?.*v=|embed\/|shorts\/|live\/)|youtu\.be\/)[\w\-]+/i'],
+            'video_key' => [
+                'nullable',
+                'string',
+                'max:255',
+                'starts_with:projects/videos/',
+                function ($attribute, $value, $fail) {
+                    try {
+                        if (! Storage::disk('r2')->exists((string) $value)) {
+                            $fail("Video showcase [{$value}] does not exist on Cloudflare R2 or failed to upload.");
+                        }
+                    } catch (\Throwable $e) {
+                        // If storage is unreachable or in non-configured dev, allow if formatted properly
+                    }
+                },
+            ],
+            'video_file_size' => 'nullable|integer|min:1|max:52428800',
+            'video_mime_type' => 'nullable|string|in:video/mp4,video/webm',
         ];
     }
 
@@ -115,6 +132,9 @@ class UpdateProjectRequest extends FormRequest
             'gallery_images.*.max' => 'Each gallery photo may not be greater than 10 MB.',
             'gallery_videos.*.url' => 'Video link must be a valid URL.',
             'gallery_videos.*.regex' => 'Video link must be a valid YouTube URL (e.g. youtube.com/watch?v=... or youtu.be/...).',
+            'video_key.starts_with' => 'Invalid video key format.',
+            'video_file_size.max' => 'Video file size may not exceed 50 MB.',
+            'video_mime_type.in' => 'Supported video formats are MP4 and WebM.',
         ];
     }
 
@@ -125,6 +145,8 @@ class UpdateProjectRequest extends FormRequest
             $uploadedImages = $this->file('gallery_images', []);
             $tempImages = $this->input('temp_gallery_images', []);
             $videoUrls = array_filter($this->input('gallery_videos', []), fn ($v) => ! empty(trim((string) $v)));
+            $hasR2Video = ! empty($this->input('video_key'));
+            $totalNewVideoCount = count($videoUrls) + ($hasR2Video ? 1 : 0);
 
             if (! ($project instanceof Project)) {
                 $project = Project::find($project);
@@ -135,15 +157,15 @@ class UpdateProjectRequest extends FormRequest
             }
 
             $currentCount = $project->images()->count();
-            $newCount = count($uploadedImages) + count($tempImages) + count($videoUrls);
+            $newCount = count($uploadedImages) + count($tempImages) + $totalNewVideoCount;
 
             if ($currentCount + $newCount > 10) {
-                $message = count($videoUrls) > 0
+                $message = $totalNewVideoCount > 0
                     ? "Gallery may not contain more than 10 total items (photos and videos combined) per project. Currently has {$currentCount} items."
                     : 'Gallery may not contain more than 10 photos per project.';
 
                 $validator->errors()->add('gallery_images', $message);
-                if (count($videoUrls) > 0) {
+                if ($totalNewVideoCount > 0) {
                     $validator->errors()->add('gallery_videos', $message);
                 }
             }

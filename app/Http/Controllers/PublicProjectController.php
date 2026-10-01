@@ -40,11 +40,15 @@ class PublicProjectController extends Controller
         ];
 
         foreach ($project->images as $img) {
+            $isR2Video = ($img->type === 'video' && $img->storage_disk === 'r2');
+            $isYoutubeVideo = ($img->type === 'video' && $img->storage_disk !== 'r2');
             $allMediaItems[] = [
                 'type' => $img->type ?? 'image',
-                'src' => ($img->type === 'video') ? $img->embed_url : asset('storage/'.$img->image_path),
-                'embedUrl' => ($img->type === 'video') ? $img->embed_url : null,
-                'thumb' => ($img->type === 'video') ? $img->thumbnail_url : asset('storage/'.$img->image_path),
+                'src' => $isR2Video ? $img->video_stream_url : ($isYoutubeVideo ? $img->embed_url : asset('storage/'.$img->image_path)),
+                'embedUrl' => $isYoutubeVideo ? $img->embed_url : null,
+                'videoUrl' => $isR2Video ? $img->video_stream_url : null,
+                'storageDisk' => $img->storage_disk ?? 'public',
+                'thumb' => ($img->type === 'video') ? ($img->thumbnail_url ?: $imagePath) : asset('storage/'.$img->image_path),
             ];
         }
 

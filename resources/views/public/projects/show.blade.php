@@ -90,11 +90,15 @@
 
                 if ($project->images) {
                     foreach ($project->images as $img) {
+                        $isR2Video = ($img->type === 'video' && $img->storage_disk === 'r2');
+                        $isYoutubeVideo = ($img->type === 'video' && $img->storage_disk !== 'r2');
                         $allMediaItems[] = [
                             'type' => $img->type ?? 'image',
-                            'src' => ($img->type === 'video') ? $img->embed_url : asset('storage/' . $img->image_path),
-                            'embedUrl' => ($img->type === 'video') ? $img->embed_url : null,
-                            'thumb' => ($img->type === 'video') ? $img->thumbnail_url : asset('storage/' . $img->image_path),
+                            'src' => $isR2Video ? $img->video_stream_url : ($isYoutubeVideo ? $img->embed_url : asset('storage/' . $img->image_path)),
+                            'embedUrl' => $isYoutubeVideo ? $img->embed_url : null,
+                            'videoUrl' => $isR2Video ? $img->video_stream_url : null,
+                            'storageDisk' => $img->storage_disk ?? 'public',
+                            'thumb' => ($img->type === 'video') ? ($img->thumbnail_url ?: $imagePath) : asset('storage/' . $img->image_path),
                         ];
                     }
                 }
@@ -125,9 +129,13 @@
                             </div>
                         </div>
                     </div>
-                    <!-- Active Video Iframe Container -->
+                    <!-- Active Video Iframe Container (YouTube) -->
                     <div id="video-iframe-wrapper" class="hidden w-full h-full max-w-5xl aspect-video mx-auto rounded-2xl overflow-hidden shadow-2xl border border-white/10 bg-black">
                         <iframe id="main-video-iframe" class="w-full h-full" src="" title="Project Video" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                    </div>
+                    <!-- Active HTML5 Native Video Container (Cloudflare R2) -->
+                    <div id="video-native-wrapper" class="hidden w-full h-full max-w-5xl aspect-video mx-auto rounded-2xl overflow-hidden shadow-2xl border border-white/10 bg-black flex items-center justify-center">
+                        <video id="main-native-video" controls playsinline preload="metadata" class="w-full h-full object-contain"></video>
                     </div>
                 </div>
 
@@ -140,8 +148,10 @@
                 </div>
 
                 <!-- Fullscreen Cinema / Expand Button Overlay -->
-                <button type="button" onclick="openLightbox(currentImageIndex)" class="absolute bottom-6 left-6 glass-card px-3.5 py-1.5 rounded-full text-[10px] font-bold text-white tracking-wider uppercase border border-white/20 shadow-sm z-20 hover:bg-white/20 transition-all flex items-center gap-1.5 cursor-pointer">
-                    <span class="material-symbols-outlined text-sm">fullscreen</span>
+                <button type="button" onclick="openLightbox(currentImageIndex)"
+                    aria-haspopup="dialog" aria-controls="gallery-lightbox"
+                    class="group/expand absolute bottom-4 left-4 sm:bottom-6 sm:left-6 glass-card hover:bg-white px-4 sm:px-5 py-2.5 min-h-[44px] rounded-full text-xs font-bold text-primary hover:text-secondary tracking-wider uppercase border border-white/80 shadow-ambient hover:shadow-lg z-20 transition-all duration-300 ease-haptic flex items-center gap-2 cursor-pointer select-none whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary active:scale-95">
+                    <span class="material-symbols-outlined text-base text-secondary group-hover/expand:scale-110 transition-transform shrink-0" aria-hidden="true">fullscreen</span>
                     <span id="expand-label">Click Image to Expand</span>
                 </button>
 
@@ -167,8 +177,8 @@
                             <img src="{{ $item['thumb'] }}" class="w-full h-full object-cover"
                                 alt="{{ $project->title }} preview {{ $index + 1 }}" loading="lazy" decoding="async">
                             @if ($item['type'] === 'video')
-                                <span class="absolute top-1.5 left-1.5 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-red-600 text-white rounded flex items-center gap-0.5 shadow pointer-events-none">
-                                    <span class="material-symbols-outlined text-[11px]">play_arrow</span>
+                                <span class="absolute top-1.5 left-1.5 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider {{ ($item['storageDisk'] ?? '') === 'r2' ? 'bg-primary' : 'bg-red-600' }} text-white rounded flex items-center gap-0.5 shadow pointer-events-none">
+                                    <span class="material-symbols-outlined text-[11px]">{{ ($item['storageDisk'] ?? '') === 'r2' ? 'videocam' : 'play_arrow' }}</span>
                                     VIDEO
                                 </span>
                             @endif
@@ -442,9 +452,14 @@
             <img id="lightbox-image" src="" alt="Gallery Preview"
                 class="hidden max-w-full max-h-full object-contain rounded-2xl shadow-2xl scale-95 opacity-0 transition-all duration-300 relative z-10">
 
-            <!-- Fullscreen Video Iframe Container -->
+            <!-- Fullscreen Video Iframe Container (YouTube) -->
             <div id="lightbox-video-container" class="hidden w-full max-w-5xl aspect-video rounded-2xl overflow-hidden shadow-2xl border border-white/10 relative z-10 bg-black">
                 <iframe id="lightbox-video-iframe" class="w-full h-full" src="" title="Fullscreen Project Video" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+            </div>
+
+            <!-- Fullscreen HTML5 Native Video Container (Cloudflare R2) -->
+            <div id="lightbox-native-video-container" class="hidden w-full max-w-5xl aspect-video rounded-2xl overflow-hidden shadow-2xl border border-white/10 relative z-10 bg-black flex items-center justify-center">
+                <video id="lightbox-native-video" controls playsinline preload="metadata" class="w-full h-full object-contain"></video>
             </div>
         </div>
     </div>
@@ -472,27 +487,47 @@
         function stopMainVideo() {
             const mainVideoIframe = document.getElementById('main-video-iframe');
             const videoIframeWrapper = document.getElementById('video-iframe-wrapper');
+            const mainNativeVideo = document.getElementById('main-native-video');
+            const videoNativeWrapper = document.getElementById('video-native-wrapper');
             const videoFacade = document.getElementById('video-facade');
 
             if (mainVideoIframe) mainVideoIframe.src = '';
             if (videoIframeWrapper) videoIframeWrapper.classList.add('hidden');
+            if (mainNativeVideo) {
+                mainNativeVideo.pause();
+                mainNativeVideo.removeAttribute('src');
+                mainNativeVideo.load();
+            }
+            if (videoNativeWrapper) videoNativeWrapper.classList.add('hidden');
             if (videoFacade) videoFacade.classList.remove('hidden');
         }
 
         function playCurrentVideo() {
             const media = allMediaItems[currentImageIndex];
-            if (!media || media.type !== 'video' || !media.embedUrl) return;
+            if (!media || media.type !== 'video') return;
 
             const videoFacade = document.getElementById('video-facade');
             const videoIframeWrapper = document.getElementById('video-iframe-wrapper');
             const mainVideoIframe = document.getElementById('main-video-iframe');
+            const videoNativeWrapper = document.getElementById('video-native-wrapper');
+            const mainNativeVideo = document.getElementById('main-native-video');
 
             if (videoFacade) videoFacade.classList.add('hidden');
-            if (videoIframeWrapper) videoIframeWrapper.classList.remove('hidden');
 
-            const sep = media.embedUrl.includes('?') ? '&' : '?';
-            if (mainVideoIframe) {
-                mainVideoIframe.src = media.embedUrl + sep + 'autoplay=1';
+            if (media.storageDisk === 'r2' || media.videoUrl) {
+                if (videoIframeWrapper) videoIframeWrapper.classList.add('hidden');
+                if (videoNativeWrapper) videoNativeWrapper.classList.remove('hidden');
+                if (mainNativeVideo) {
+                    mainNativeVideo.src = media.videoUrl || media.src;
+                    mainNativeVideo.play();
+                }
+            } else if (media.embedUrl) {
+                if (videoNativeWrapper) videoNativeWrapper.classList.add('hidden');
+                if (videoIframeWrapper) videoIframeWrapper.classList.remove('hidden');
+                const sep = media.embedUrl.includes('?') ? '&' : '?';
+                if (mainVideoIframe) {
+                    mainVideoIframe.src = media.embedUrl + sep + 'autoplay=1';
+                }
             }
         }
 
@@ -608,16 +643,41 @@
 
             const media = allMediaItems[index] || { type: 'image', src: target };
 
+            const lightboxNativeContainer = document.getElementById('lightbox-native-video-container');
+            const lightboxNativeVideo = document.getElementById('lightbox-native-video');
+
             if (media.type === 'video') {
                 if (img) img.classList.add('hidden');
                 if (loader) loader.classList.add('hidden');
-                if (videoContainer) videoContainer.classList.remove('hidden');
 
-                const sep = media.embedUrl.includes('?') ? '&' : '?';
-                if (videoIframe) {
-                    videoIframe.src = media.embedUrl + sep + 'autoplay=1';
+                if (media.storageDisk === 'r2' || media.videoUrl) {
+                    if (videoContainer) videoContainer.classList.add('hidden');
+                    if (videoIframe) videoIframe.src = '';
+                    if (lightboxNativeContainer) lightboxNativeContainer.classList.remove('hidden');
+                    if (lightboxNativeVideo) {
+                        lightboxNativeVideo.src = media.videoUrl || media.src;
+                        lightboxNativeVideo.play();
+                    }
+                } else if (media.embedUrl) {
+                    if (lightboxNativeContainer) lightboxNativeContainer.classList.add('hidden');
+                    if (lightboxNativeVideo) {
+                        lightboxNativeVideo.pause();
+                        lightboxNativeVideo.removeAttribute('src');
+                        lightboxNativeVideo.load();
+                    }
+                    if (videoContainer) videoContainer.classList.remove('hidden');
+                    const sep = media.embedUrl.includes('?') ? '&' : '?';
+                    if (videoIframe) {
+                        videoIframe.src = media.embedUrl + sep + 'autoplay=1';
+                    }
                 }
             } else {
+                if (lightboxNativeContainer) lightboxNativeContainer.classList.add('hidden');
+                if (lightboxNativeVideo) {
+                    lightboxNativeVideo.pause();
+                    lightboxNativeVideo.removeAttribute('src');
+                    lightboxNativeVideo.load();
+                }
                 if (videoContainer) videoContainer.classList.add('hidden');
                 if (videoIframe) videoIframe.src = '';
                 if (img) {
@@ -642,6 +702,8 @@
             const img = document.getElementById('lightbox-image');
             const videoContainer = document.getElementById('lightbox-video-container');
             const videoIframe = document.getElementById('lightbox-video-iframe');
+            const lightboxNativeContainer = document.getElementById('lightbox-native-video-container');
+            const lightboxNativeVideo = document.getElementById('lightbox-native-video');
 
             lightbox.classList.remove('opacity-100');
             lightbox.classList.add('opacity-0');
@@ -651,7 +713,13 @@
                 img.classList.add('scale-95', 'opacity-0');
             }
 
-            // Immediately cut off video audio on close
+            // Immediately cut off video playback on close
+            if (lightboxNativeVideo) {
+                lightboxNativeVideo.pause();
+                lightboxNativeVideo.removeAttribute('src');
+                lightboxNativeVideo.load();
+            }
+            if (lightboxNativeContainer) lightboxNativeContainer.classList.add('hidden');
             if (videoIframe) videoIframe.src = '';
             if (videoContainer) videoContainer.classList.add('hidden');
 

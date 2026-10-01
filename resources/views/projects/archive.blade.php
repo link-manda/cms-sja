@@ -150,6 +150,8 @@
                 const actionType = this.getAttribute('data-action-type');
                 
                 modalForm.action = actionUrl;
+                modalSubmitBtn.disabled = false;
+                modalSubmitBtn.classList.remove('pointer-events-none', 'opacity-60');
                 
                 if (actionType === 'restore') {
                     modalMethod.value = 'PATCH';
@@ -179,6 +181,16 @@
                     }
                 }
             });
+        });
+
+        // Prevent rapid double-clicks and show loading state on submission
+        modalForm.addEventListener('submit', function () {
+            modalSubmitBtn.disabled = true;
+            modalSubmitBtn.classList.add('pointer-events-none', 'opacity-60');
+            modalSubmitBtn.innerHTML = '<span class="inline-flex items-center gap-1.5"><i class="size-4 animate-spin" data-lucide="loader-2"></i> Processing...</span>';
+            if (window.lucide && typeof window.lucide.createIcons === 'function') {
+                window.lucide.createIcons({ root: modalSubmitBtn });
+            }
         });
     });
 </script>

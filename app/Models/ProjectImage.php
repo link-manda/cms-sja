@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['project_id', 'type', 'image_path', 'video_url'])]
+#[Fillable(['project_id', 'type', 'storage_disk', 'image_path', 'video_url', 'file_size', 'mime_type'])]
 class ProjectImage extends Model
 {
     use HasFactory;
@@ -17,7 +17,7 @@ class ProjectImage extends Model
      *
      * @var array<int, string>
      */
-    protected $appends = ['embed_url', 'thumbnail_url'];
+    protected $appends = ['embed_url', 'thumbnail_url', 'video_stream_url'];
 
     public function project(): BelongsTo
     {
@@ -96,5 +96,17 @@ class ProjectImage extends Model
         }
 
         return ! empty($this->image_path) ? asset('storage/'.$this->image_path) : null;
+    }
+
+    /**
+     * Accessor for direct video streaming URL (Cloudflare R2 or direct video file).
+     */
+    public function getVideoStreamUrlAttribute(): ?string
+    {
+        if ($this->type !== 'video' || empty($this->video_url)) {
+            return null;
+        }
+
+        return $this->video_url;
     }
 }

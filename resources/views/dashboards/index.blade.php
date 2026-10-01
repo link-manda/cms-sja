@@ -6,12 +6,12 @@
 @section('content')
     @include('layouts.partials/page-title', ['subtitle' => 'CMS SJA', 'title' => 'Dashboard'])
 
-    <!-- KPI Cards Grid -->
+    <!-- KPI Cards Grid (Project Portfolio Domain) -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
         <!-- Total Projects -->
         <div class="card">
             <div class="card-body flex items-center gap-4">
-                <div class="flex items-center justify-center rounded-full size-14 bg-primary/10 text-primary">
+                <div class="flex items-center justify-center rounded-full size-14 bg-primary/10 text-primary shrink-0">
                     <i class="size-7" data-lucide="folder-kanban"></i>
                 </div>
                 <div>
@@ -19,17 +19,15 @@
                     <h5 class="text-2xl font-bold text-default-900 mt-1">
                         {{ $totalProjects }}
                     </h5>
+                    <p class="text-xs text-default-400 mt-1">Active portfolio projects</p>
                 </div>
-                <a href="{{ route('projects.index') }}" class="ms-auto btn size-8 flex items-center justify-center bg-default-100 hover:bg-default-200 text-default-700 rounded-full transition-all cursor-pointer" title="Manage Projects">
-                    <i class="size-4.5" data-lucide="arrow-right"></i>
-                </a>
             </div>
         </div>
 
         <!-- Completed Projects -->
         <div class="card">
             <div class="card-body flex items-center gap-4">
-                <div class="flex items-center justify-center rounded-full size-14 bg-success/10 text-success">
+                <div class="flex items-center justify-center rounded-full size-14 bg-success/10 text-success shrink-0">
                     <i class="size-7" data-lucide="check-circle-2"></i>
                 </div>
                 <div>
@@ -37,15 +35,15 @@
                     <h5 class="text-2xl font-bold text-default-900 mt-1">
                         {{ $completedProjects }}
                     </h5>
+                    <p class="text-xs text-default-400 mt-1"><span class="text-success font-semibold">{{ $completedPercentage }}%</span> completion rate</p>
                 </div>
-                <span class="ms-auto px-2.5 py-0.5 text-xs font-semibold rounded bg-success/15 text-success">Finished</span>
             </div>
         </div>
 
         <!-- Ongoing Projects -->
         <div class="card">
             <div class="card-body flex items-center gap-4">
-                <div class="flex items-center justify-center rounded-full size-14 bg-warning/10 text-warning">
+                <div class="flex items-center justify-center rounded-full size-14 bg-warning/10 text-warning shrink-0">
                     <i class="size-7" data-lucide="clock"></i>
                 </div>
                 <div>
@@ -53,18 +51,18 @@
                     <h5 class="text-2xl font-bold text-default-900 mt-1">
                         {{ $ongoingProjects }}
                     </h5>
+                    <p class="text-xs text-default-400 mt-1"><span class="text-warning font-semibold">{{ $ongoingPercentage }}%</span> in progress</p>
                 </div>
-                <span class="ms-auto px-2.5 py-0.5 text-xs font-semibold rounded bg-warning/15 text-warning animate-pulse">Active</span>
             </div>
         </div>
     </div>
 
     <!-- Main Content Area -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        
+
         <!-- Left: Recent Projects Table -->
         <div class="lg:col-span-2 col-span-1">
-            <div class="card h-full">
+            <div class="card">
                 <div class="card-header flex justify-between items-center">
                     <h6 class="card-title text-base font-semibold text-default-800">Recent Projects</h6>
                     <a href="{{ route('projects.index') }}" class="text-xs text-primary hover:underline font-medium">View All Projects</a>
@@ -121,8 +119,48 @@
             </div>
         </div>
 
-        <!-- Right: SEO Health & Quick Actions -->
+        <!-- Right: System & Media Health, Shortcuts -->
         <div class="col-span-1 space-y-5">
+            <!-- Cloudflare R2 Storage Card -->
+            <div class="card" id="r2-storage-card">
+                <div class="card-header flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <div class="flex items-center justify-center rounded-lg size-8 bg-sky-500/10 text-sky-500 shrink-0">
+                            <i class="size-4.5" data-lucide="cloud"></i>
+                        </div>
+                        <h6 class="card-title text-base font-semibold text-default-800">Cloud Media Storage (R2)</h6>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span id="r2-status-badge" class="px-2 py-0.5 text-xs font-semibold rounded inline-flex items-center gap-1 {{ $r2Storage['bg_color'] }} {{ $r2Storage['text_color'] }}">
+                            <i id="r2-status-icon" class="size-3.5" data-lucide="{{ $r2Storage['icon'] }}"></i>
+                            <span id="r2-status-text">{{ $r2Storage['status_label'] }}</span>
+                        </span>
+                        <button type="button" id="btn-sync-r2" class="btn size-7 flex items-center justify-center bg-default-100 hover:bg-default-200 text-default-700 rounded-full transition cursor-pointer" title="Sync R2 Storage">
+                            <i id="r2-sync-icon" class="size-3.5" data-lucide="refresh-cw"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body space-y-3 pt-3">
+                    <div class="flex items-baseline justify-between">
+                        <h5 id="r2-usage-text" class="text-xl font-bold text-default-900 tracking-tight" aria-live="polite">
+                            {{ $r2Storage['total_formatted'] }} <span class="text-xs font-normal text-default-400">/ {{ $r2Storage['limit_formatted'] }}</span>
+                        </h5>
+                        <span class="text-xs text-default-400 font-medium">Business Pro Tier</span>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div class="w-full bg-default-150 rounded-full h-2 overflow-hidden" role="progressbar" id="r2-progressbar-container" aria-valuenow="{{ $r2Storage['percentage'] }}" aria-valuemin="0" aria-valuemax="100" aria-label="Cloudflare R2 Storage Capacity">
+                        <div id="r2-progressbar" class="h-2 rounded-full transition-all duration-500 {{ $r2Storage['bar_color'] }}" style="width: {{ max(1, $r2Storage['percentage']) }}%;"></div>
+                    </div>
+
+                    <!-- Counter Footer -->
+                    <div class="flex items-center justify-between text-xs text-default-500 font-medium pt-0.5">
+                        <span id="r2-percent-text">{{ $r2Storage['percentage'] }}% Used</span>
+                        <span id="r2-video-count">{{ $r2Storage['video_count'] }} {{ $r2Storage['video_count'] === 1 ? 'Active Video' : 'Active Videos' }}</span>
+                    </div>
+                </div>
+            </div>
+
             <!-- SEO Health Card -->
             <div class="card">
                 <div class="card-header">
@@ -168,4 +206,115 @@
 @endsection
 
 @section('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const btnSync = document.getElementById('btn-sync-r2');
+    if (!btnSync) return;
+
+    btnSync.addEventListener('click', function () {
+        const syncIcon = document.getElementById('r2-sync-icon');
+        const tokenMeta = document.querySelector('meta[name="csrf-token"]');
+        const csrfToken = tokenMeta ? tokenMeta.getAttribute('content') : '';
+
+        // Disable button & animate spinner
+        btnSync.disabled = true;
+        btnSync.classList.add('pointer-events-none', 'opacity-60');
+        btnSync.setAttribute('aria-busy', 'true');
+        if (syncIcon) {
+            syncIcon.classList.add('animate-spin');
+        }
+
+        fetch('{{ route('manage.storage.sync-r2') }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json'
+            }
+        })
+        .then(async (response) => {
+            if (response.status === 419) {
+                alert('Your session has expired. Please reload the page to refresh your session.');
+                window.location.reload();
+                return;
+            }
+            if (response.status === 429) {
+                alert('Too many sync requests. Please wait a moment before trying again.');
+                return;
+            }
+
+            const data = await response.json();
+            if (!response.ok || !data.success) {
+                throw new Error(data.message || 'Failed to synchronize Cloudflare R2 data.');
+            }
+
+            const usage = data.data;
+
+            // Update text metrics
+            const usageText = document.getElementById('r2-usage-text');
+            if (usageText) {
+                usageText.innerHTML = `${usage.total_formatted} <span class="text-xs font-normal text-default-400">/ ${usage.limit_formatted}</span>`;
+            }
+
+            const percentText = document.getElementById('r2-percent-text');
+            if (percentText) {
+                percentText.textContent = `${usage.percentage}% Used`;
+            }
+
+            const videoCount = document.getElementById('r2-video-count');
+            if (videoCount) {
+                videoCount.textContent = `${usage.video_count} ${usage.video_count === 1 ? 'Active Video' : 'Active Videos'}`;
+            }
+
+            // Update Progress Bar
+            const progressContainer = document.getElementById('r2-progressbar-container');
+            if (progressContainer) {
+                progressContainer.setAttribute('aria-valuenow', usage.percentage);
+            }
+
+            const progressBar = document.getElementById('r2-progressbar');
+            if (progressBar) {
+                progressBar.style.width = `${Math.max(1, usage.percentage)}%`;
+                progressBar.className = `h-2 rounded-full transition-all duration-500 ${usage.bar_color}`;
+            }
+
+            // Update Status Badge & Icon
+            const statusBadge = document.getElementById('r2-status-badge');
+            const statusText = document.getElementById('r2-status-text');
+            if (statusBadge && statusText) {
+                statusText.textContent = usage.status_label;
+                statusBadge.className = `px-2 py-0.5 text-xs font-semibold rounded inline-flex items-center gap-1 ${usage.bg_color} ${usage.text_color}`;
+
+                const oldIcon = document.getElementById('r2-status-icon');
+                if (oldIcon) {
+                    const newIcon = document.createElement('i');
+                    newIcon.id = 'r2-status-icon';
+                    newIcon.className = 'size-3.5';
+                    newIcon.setAttribute('data-lucide', usage.icon);
+                    oldIcon.replaceWith(newIcon);
+
+                    // Re-render only the updated status icon inside the status badge container
+                    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+                        window.lucide.createIcons({
+                            root: statusBadge
+                        });
+                    }
+                }
+            }
+        })
+        .catch((error) => {
+            alert(error.message || 'An error occurred while synchronizing Cloudflare R2 data.');
+        })
+        .finally(() => {
+            btnSync.disabled = false;
+            btnSync.classList.remove('pointer-events-none', 'opacity-60');
+            btnSync.removeAttribute('aria-busy');
+            const activeSyncIcon = document.getElementById('r2-sync-icon');
+            if (activeSyncIcon) {
+                activeSyncIcon.classList.remove('animate-spin');
+            }
+        });
+    });
+});
+</script>
 @endsection

@@ -26,14 +26,17 @@ Route::get('/pricing-calculator', [PublicCalculatorController::class, 'index'])-
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::redirect('/admin', '/dashboard');
     Route::get('/dashboard', [RoutingController::class, 'index'])->name('dashboard');
+    Route::post('manage/storage/sync-r2', [RoutingController::class, 'syncR2Storage'])
+        ->middleware('throttle:10,1')
+        ->name('manage.storage.sync-r2');
 
     // Project Archive Routes
     Route::get('manage/projects/archive', [ProjectController::class, 'archive'])->name('projects.archive');
     Route::patch('manage/projects/{id}/restore', [ProjectController::class, 'restore'])
-        ->middleware('throttle:10,1')
+        ->middleware('throttle:30,1')
         ->name('projects.restore');
     Route::delete('manage/projects/{id}/force-delete', [ProjectController::class, 'forceDelete'])
-        ->middleware('throttle:5,1')
+        ->middleware('throttle:30,1')
         ->name('projects.force-delete');
 
     // Rute untuk menghapus 1 foto spesifik dari galeri
@@ -46,11 +49,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware('throttle:60,1')
         ->name('projects.upload-temp-gallery');
 
+    // Rute presigned upload video showcase ke Cloudflare R2
+    Route::post('manage/projects/video/presign-upload', [ProjectController::class, 'presignVideoUpload'])
+        ->middleware('throttle:30,1')
+        ->name('projects.video.presign-upload');
+
     Route::resource('manage/projects', ProjectController::class)
         ->names('projects')
         ->parameters(['projects' => 'project'])
         ->middleware(['throttle:30,1']);
     Route::resource('categories', CategoryController::class)
+        ->except(['show'])
         ->middleware(['throttle:30,1']);
 
     // Calculator: hapus 1 gambar spesifik dari opsi

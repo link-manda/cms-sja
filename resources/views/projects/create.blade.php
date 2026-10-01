@@ -14,7 +14,7 @@
                 </div>
                 <div class="flex-1 text-sm">
                     <h6 class="font-semibold text-rose-800 dark:text-rose-300 text-base mb-1">
-                        Terdapat {{ $errors->count() }} kesalahan validasi formulir:
+                        There are {{ $errors->count() }} form validation errors:
                     </h6>
                     <ul class="list-disc list-inside space-y-1 text-xs text-rose-700 dark:text-rose-300">
                         @foreach ($errors->all() as $error)
@@ -22,7 +22,7 @@
                         @endforeach
                     </ul>
                     <p class="mt-2 text-xs text-rose-600/80 dark:text-rose-400/80">
-                        Silakan periksa dan perbaiki field terkait di bawah ini sebelum menyimpan kembali.
+                        Please review and correct the marked fields below before saving again.
                     </p>
                 </div>
             </div>
@@ -167,7 +167,7 @@
                     @if ($errors->any())
                         <p class="text-xs text-amber-600 dark:text-amber-400 mt-1.5 flex items-center gap-1">
                             <i data-lucide="alert-triangle" class="size-3.5 inline"></i>
-                            Pilih ulang file gambar utama jika form sebelumnya mengalami kesalahan validasi (kebijakan keamanan browser).
+                            Please re-select the main image file if the form previously encountered a validation error (browser security policy).
                         </p>
                     @endif
                 </div>
@@ -233,52 +233,92 @@
                     </div>
                 </div>
 
-                <!-- Gallery Videos (YouTube) -->
+                <!-- Project Video Showcase (Direct Upload to Cloudflare R2) -->
                 <div class="border-t border-default-200 pt-5">
                     <div class="flex items-center justify-between mb-2">
                         <div>
-                            <h6 class="text-sm font-semibold text-default-800 flex items-center gap-1">
-                                <i class="size-4 text-danger" data-lucide="video"></i> Project Videos (YouTube) - Optional
+                            <h6 class="text-sm font-semibold text-default-800 flex items-center gap-1.5">
+                                <i class="size-4 text-primary" data-lucide="video"></i> Project Video Showcase (Cloudflare R2) - Optional
                             </h6>
-                            <p class="text-xs text-default-500 mt-0.5">Add YouTube video links (Standard, Shorts, or youtu.be). Combined with photos, maximum 10 items.</p>
+                            <p class="text-xs text-default-500 mt-0.5">Upload MP4 or WebM video (up to 50 MB). Videos are uploaded directly to high-speed cloud storage.</p>
                         </div>
-                        <button type="button" id="add-video-btn" class="btn btn-sm border border-default-300 hover:bg-default-100 text-default-700 flex items-center gap-1 cursor-pointer">
-                            <i class="size-3.5" data-lucide="plus"></i> Add Video Link
-                        </button>
                     </div>
 
-                    <div id="video-inputs-container" class="space-y-3 mt-3">
-                        @php
-                            $oldVideos = old('gallery_videos', ['']);
-                        @endphp
-                        @foreach($oldVideos as $index => $videoVal)
-                            <div class="video-input-group space-y-2 p-3 rounded-lg border border-default-200 bg-default-50/50">
-                                <div class="video-input-row flex items-center gap-2">
-                                    <div class="relative flex-1">
-                                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-default-400">
-                                            <i class="size-4 text-danger" data-lucide="youtube"></i>
-                                        </span>
-                                        <input type="url" name="gallery_videos[]" value="{{ $videoVal }}" placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..." class="form-input youtube-url-input pl-9 text-sm">
+                    <!-- Video Upload Dropzone & Selection Area -->
+                    <div id="video-dropzone-container" class="space-y-3 mt-3">
+                        <input type="file" id="video-file-input" accept="video/mp4,video/webm" class="hidden">
+                        <input type="hidden" name="video_key" id="submitted-video-key" value="{{ old('video_key') }}">
+                        <input type="hidden" name="video_file_size" id="submitted-video-size" value="{{ old('video_file_size') }}">
+                        <input type="hidden" name="video_mime_type" id="submitted-video-mime" value="{{ old('video_mime_type') }}">
+
+                        <!-- Empty / Selection Dropzone -->
+                        <div id="video-dropzone" class="border-2 border-dashed border-default-300 hover:border-primary/60 rounded-xl p-6 text-center cursor-pointer transition-colors bg-default-50/50 hover:bg-primary/5 flex flex-col items-center justify-center gap-2 {{ old('video_key') ? 'hidden' : '' }}">
+                            <div class="p-3 rounded-full bg-primary/10 text-primary">
+                                <i data-lucide="video" class="size-6"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-default-800">Drag and drop your video file here, or <span class="text-primary font-semibold hover:underline">browse file</span></p>
+                                <p class="text-xs text-default-500 mt-1">Format: MP4 (H.264/AAC), WebM • Maximum size 50 MB</p>
+                            </div>
+                        </div>
+
+                        <!-- Video Selected Preview Card -->
+                        <div id="video-preview-card" class="p-4 rounded-xl border border-default-200 bg-card space-y-3 hidden">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2.5 truncate max-w-[70%]">
+                                    <div class="p-2 rounded-lg bg-primary/10 text-primary shrink-0">
+                                        <i data-lucide="film" class="size-4"></i>
                                     </div>
-                                    <button type="button" class="remove-video-row-btn p-2 text-default-400 hover:text-danger rounded border border-default-200 hover:border-danger/30 transition-colors {{ count($oldVideos) <= 1 && empty($videoVal) ? 'hidden' : '' }}" title="Remove link">
-                                        <i class="size-4" data-lucide="trash-2"></i>
+                                    <div class="truncate">
+                                        <p id="video-preview-name" class="text-sm font-semibold text-default-900 truncate">video.mp4</p>
+                                        <p id="video-preview-meta" class="text-xs text-default-500">0 MB • Ready to save</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <button type="button" id="video-change-btn" class="btn btn-sm border border-default-300 hover:bg-default-100 text-default-700 text-xs px-2.5 py-1 flex items-center gap-1 cursor-pointer">
+                                        <i data-lucide="refresh-cw" class="size-3"></i> Change
                                     </button>
+                                    <button type="button" id="video-remove-btn" class="btn btn-sm border border-rose-300 hover:bg-rose-50 text-rose-600 text-xs px-2.5 py-1 flex items-center gap-1 cursor-pointer">
+                                        <i data-lucide="trash-2" class="size-3"></i> Remove
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Native HTML5 Video Preview Container -->
+                            <div class="relative rounded-lg overflow-hidden bg-black aspect-video max-h-56 flex items-center justify-center">
+                                <video id="video-preview-player" controls playsinline class="w-full h-full object-contain"></video>
+                            </div>
+                        </div>
+
+                        <!-- Fallback / Optional YouTube accordion -->
+                        <div class="pt-2">
+                            <button type="button" id="toggle-youtube-link-btn" class="text-xs text-default-500 hover:text-primary transition-colors flex items-center gap-1 cursor-pointer">
+                                <i data-lucide="youtube" class="size-3.5 text-danger"></i>
+                                <span id="youtube-link-toggle-label">+ Add alternative YouTube link instead of direct video upload</span>
+                            </button>
+                            <div id="youtube-link-section" class="mt-2.5 p-3 rounded-lg border border-default-200 bg-default-50/50 space-y-2 {{ old('gallery_videos.0') ? '' : 'hidden' }}">
+                                <label class="block text-xs font-medium text-default-700">YouTube Video Link (Alternative)</label>
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-default-400">
+                                        <i class="size-4 text-danger" data-lucide="youtube"></i>
+                                    </span>
+                                    <input type="url" name="gallery_videos[]" id="fallback-youtube-input" value="{{ old('gallery_videos.0') }}" placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..." class="form-input youtube-url-input pl-9 text-sm">
                                 </div>
                                 <div class="youtube-preview-card hidden rounded-lg border border-default-200 bg-card p-2.5 text-xs flex items-center gap-3"></div>
                             </div>
-                        @endforeach
+                        </div>
                     </div>
 
-                    @if ($errors->hasAny(['gallery_videos', 'gallery_videos.*']))
-                        <div class="mt-2 bg-danger/10 text-danger border border-danger/20 rounded p-3">
-                            @if ($errors->has('gallery_videos'))
-                                <p class="text-sm flex items-center gap-1"><i class="size-4"
-                                        data-lucide="alert-circle"></i> {{ $errors->first('gallery_videos') }}</p>
-                            @endif
+                    @if ($errors->hasAny(['video_key', 'video_file_size', 'video_mime_type', 'gallery_videos', 'gallery_videos.*']))
+                        <div class="mt-3 bg-danger/10 text-danger border border-danger/20 rounded p-3 text-xs space-y-1">
+                            @foreach (['video_key', 'video_file_size', 'video_mime_type', 'gallery_videos'] as $errKey)
+                                @if ($errors->has($errKey))
+                                    <p class="flex items-center gap-1.5"><i class="size-4 shrink-0" data-lucide="alert-circle"></i> {{ $errors->first($errKey) }}</p>
+                                @endif
+                            @endforeach
                             @foreach ($errors->get('gallery_videos.*') as $messages)
                                 @foreach ($messages as $message)
-                                    <p class="text-sm flex items-center gap-1"><i class="size-4"
-                                            data-lucide="alert-circle"></i> {{ $message }}</p>
+                                    <p class="flex items-center gap-1.5"><i class="size-4 shrink-0" data-lucide="alert-circle"></i> {{ $message }}</p>
                                 @endforeach
                             @endforeach
                         </div>
@@ -397,17 +437,29 @@
                         <i data-lucide="upload-cloud" class="size-5"></i>
                     </div>
                     <div>
-                        <h5 class="text-base font-semibold text-default-900">Mengunggah Foto Galeri</h5>
-                        <p class="text-xs text-default-500">Proses unggah bertahap untuk menjaga stabilitas data</p>
+                        <h5 class="text-base font-semibold text-default-900" id="modal-title">Uploading Project Media</h5>
+                        <p class="text-xs text-default-500" id="modal-subtitle">Staged media transfer process to ensure upload resilience</p>
                     </div>
                 </div>
                 <span id="modal-percentage-badge" class="px-2.5 py-1 text-xs font-bold rounded-full bg-primary/10 text-primary">0%</span>
             </div>
 
+            <!-- Stage Stepper Pills -->
+            <div class="grid grid-cols-2 gap-2 text-xs font-medium">
+                <div id="stage-badge-images" class="p-2 rounded-lg border border-default-200 bg-default-50 flex items-center gap-2 text-default-600 transition-colors">
+                    <span class="size-5 rounded-full bg-default-200 flex items-center justify-center text-[10px] font-bold shrink-0">1</span>
+                    <span class="truncate">Gallery Photos</span>
+                </div>
+                <div id="stage-badge-video" class="p-2 rounded-lg border border-default-200 bg-default-50 flex items-center gap-2 text-default-600 transition-colors">
+                    <span class="size-5 rounded-full bg-default-200 flex items-center justify-center text-[10px] font-bold shrink-0">2</span>
+                    <span class="truncate">Cloudflare R2 Video</span>
+                </div>
+            </div>
+
             <!-- Overall Progress Bar -->
             <div class="space-y-1.5">
                 <div class="flex justify-between text-xs text-default-600 font-medium">
-                    <span id="modal-status-text">Menyiapkan antrean foto...</span>
+                    <span id="modal-status-text">Preparing files...</span>
                     <span id="modal-count-text">0 / 0</span>
                 </div>
                 <div class="w-full h-2.5 bg-default-100 rounded-full overflow-hidden">
@@ -415,27 +467,36 @@
                 </div>
             </div>
 
-            <!-- Active File Progress Info -->
+            <!-- Active Item Progress Info -->
             <div id="modal-active-file-box" class="p-3 bg-default-50 rounded-lg border border-default-200 text-xs flex items-center justify-between">
-                <div class="flex items-center gap-2 truncate max-w-[80%]">
-                    <i data-lucide="file-image" class="size-4 text-primary shrink-0"></i>
-                    <span id="modal-active-file-name" class="truncate font-medium text-default-700">Foto 1.jpg</span>
+                <div class="flex items-center gap-2 truncate max-w-[70%]">
+                    <i id="modal-active-file-icon" data-lucide="file-image" class="size-4 text-primary shrink-0"></i>
+                    <span id="modal-active-file-name" class="truncate font-medium text-default-700">Preparing...</span>
                 </div>
                 <span id="modal-active-file-status" class="text-default-500 shrink-0 font-medium">0%</span>
+            </div>
+
+            <!-- Real-time transfer speed / byte metrics -->
+            <div id="modal-transfer-metrics" class="text-[11px] text-default-500 flex items-center justify-between px-1">
+                <span id="modal-bytes-text">0 MB / 0 MB</span>
+                <span id="modal-speed-text"></span>
             </div>
 
             <!-- Error Action Panel -->
             <div id="modal-error-panel" class="hidden p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg text-xs space-y-2">
                 <div class="flex items-start gap-2 text-rose-600 dark:text-rose-400">
                     <i data-lucide="alert-triangle" class="size-4 shrink-0 mt-0.5"></i>
-                    <span id="modal-error-message">Gagal mengunggah foto. Koneksi terputus atau file tidak valid.</span>
+                    <span id="modal-error-message">Failed to upload file. Connection lost or format unsupported.</span>
                 </div>
                 <div class="flex justify-end gap-2 pt-1">
-                    <button type="button" id="modal-skip-btn" class="px-3 py-1.5 rounded bg-default-200 hover:bg-default-300 text-default-800 font-medium text-xs transition-colors cursor-pointer">
-                        Lewati & Lanjutkan Simpan
+                    <button type="button" id="modal-cancel-btn" class="px-3 py-1.5 rounded bg-default-200 hover:bg-default-300 text-default-800 font-medium text-xs transition-colors cursor-pointer">
+                        Cancel
+                    </button>
+                    <button type="button" id="modal-skip-btn" class="hidden px-3 py-1.5 rounded bg-default-200 hover:bg-default-300 text-default-800 font-medium text-xs transition-colors cursor-pointer">
+                        Skip
                     </button>
                     <button type="button" id="modal-retry-btn" class="px-3 py-1.5 rounded bg-rose-600 hover:bg-rose-700 text-white font-medium text-xs transition-colors cursor-pointer flex items-center gap-1">
-                        <i data-lucide="refresh-cw" class="size-3"></i> Coba Lagi
+                        <i data-lucide="refresh-cw" class="size-3"></i> Retry
                     </button>
                 </div>
             </div>
@@ -648,10 +709,10 @@
                         <div class="flex-1 min-w-0">
                             <div class="flex items-center gap-1.5 font-medium text-success text-xs">
                                 <i data-lucide="check-circle" class="size-3.5"></i>
-                                <span>URL YouTube Terverifikasi</span>
+                                <span>Verified YouTube URL</span>
                             </div>
                             <a href="https://www.youtube.com/watch?v=${videoId}" target="_blank" rel="noopener noreferrer" class="text-[11px] text-primary hover:underline flex items-center gap-1 mt-0.5 truncate">
-                                Buka Video di YouTube <i data-lucide="external-link" class="size-3"></i>
+                                Open Video on YouTube <i data-lucide="external-link" class="size-3"></i>
                             </a>
                         </div>
                     `;
@@ -660,7 +721,7 @@
                     previewCard.innerHTML = `
                         <div class="flex items-center gap-1.5 text-danger font-medium text-xs">
                             <i data-lucide="alert-circle" class="size-4 shrink-0"></i>
-                            <span>Format URL YouTube tidak valid. Gunakan format youtube.com/watch?v=... atau youtu.be/...</span>
+                            <span>Invalid YouTube URL format. Use youtube.com/watch?v=... or youtu.be/...</span>
                         </div>
                     `;
                     previewCard.classList.remove('hidden');
@@ -792,25 +853,164 @@
                 });
             }
 
-            // Staged Asynchronous Gallery Upload Orchestration
+            // Video Showcase Dropzone & Preview Handler
+            const videoDropzone = document.getElementById('video-dropzone');
+            const videoFileInput = document.getElementById('video-file-input');
+            const videoPreviewCard = document.getElementById('video-preview-card');
+            const videoPreviewPlayer = document.getElementById('video-preview-player');
+            const videoPreviewName = document.getElementById('video-preview-name');
+            const videoPreviewMeta = document.getElementById('video-preview-meta');
+            const videoChangeBtn = document.getElementById('video-change-btn');
+            const videoRemoveBtn = document.getElementById('video-remove-btn');
+            const submittedVideoKey = document.getElementById('submitted-video-key');
+            const submittedVideoSize = document.getElementById('submitted-video-size');
+            const submittedVideoMime = document.getElementById('submitted-video-mime');
+
+            let selectedVideoFile = null;
+
+            if (videoDropzone && videoFileInput) {
+                videoDropzone.addEventListener('click', () => videoFileInput.click());
+
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    videoDropzone.addEventListener(eventName, (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        videoDropzone.classList.add('bg-primary/10', 'border-primary');
+                    }, false);
+                });
+
+                ['dragleave', 'drop'].forEach(eventName => {
+                    videoDropzone.addEventListener(eventName, (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        videoDropzone.classList.remove('bg-primary/10', 'border-primary');
+                    }, false);
+                });
+
+                videoDropzone.addEventListener('drop', (e) => {
+                    const files = e.dataTransfer.files;
+                    if (files && files.length > 0) {
+                        handleVideoSelect(files[0]);
+                    }
+                });
+
+                videoFileInput.addEventListener('change', (e) => {
+                    if (e.target.files && e.target.files.length > 0) {
+                        handleVideoSelect(e.target.files[0]);
+                    }
+                });
+
+                if (videoChangeBtn) {
+                    videoChangeBtn.addEventListener('click', () => videoFileInput.click());
+                }
+
+                if (videoRemoveBtn) {
+                    videoRemoveBtn.addEventListener('click', () => {
+                        selectedVideoFile = null;
+                        videoFileInput.value = '';
+                        if (submittedVideoKey) submittedVideoKey.value = '';
+                        if (submittedVideoSize) submittedVideoSize.value = '';
+                        if (submittedVideoMime) submittedVideoMime.value = '';
+                        if (videoPreviewPlayer) {
+                            videoPreviewPlayer.pause();
+                            videoPreviewPlayer.removeAttribute('src');
+                            videoPreviewPlayer.load();
+                        }
+                        if (videoPreviewCard) videoPreviewCard.classList.add('hidden');
+                        if (videoDropzone) videoDropzone.classList.remove('hidden');
+                    });
+                }
+
+                function handleVideoSelect(file) {
+                    const allowedTypes = ['video/mp4', 'video/webm'];
+                    const allowedExtensions = ['mp4', 'webm'];
+                    const extension = file.name.split('.').pop().toLowerCase();
+
+                    if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(extension)) {
+                        alert('Unsupported video format. Please select an MP4 or WebM video.');
+                        videoFileInput.value = '';
+                        return;
+                    }
+
+                    const maxBytes = 52428800; // 50 MB
+                    if (file.size > maxBytes) {
+                        alert('Video size exceeds 50 MB. Please compress your video before uploading.');
+                        videoFileInput.value = '';
+                        return;
+                    }
+
+                    selectedVideoFile = file;
+                    if (submittedVideoKey) submittedVideoKey.value = '';
+                    if (submittedVideoSize) submittedVideoSize.value = file.size;
+                    if (submittedVideoMime) submittedVideoMime.value = file.type || 'video/mp4';
+
+                    const sizeInMb = (file.size / (1024 * 1024)).toFixed(1);
+                    if (videoPreviewName) videoPreviewName.textContent = file.name;
+                    if (videoPreviewMeta) videoPreviewMeta.textContent = `${sizeInMb} MB • Ready to save`;
+
+                    const objectUrl = URL.createObjectURL(file);
+                    if (videoPreviewPlayer) {
+                        videoPreviewPlayer.src = objectUrl;
+                    }
+
+                    if (videoDropzone) videoDropzone.classList.add('hidden');
+                    if (videoPreviewCard) videoPreviewCard.classList.remove('hidden');
+                    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+                        window.lucide.createIcons({ root: videoPreviewCard });
+                    }
+                }
+            }
+
+            // Optional YouTube accordion toggle
+            const toggleYoutubeBtn = document.getElementById('toggle-youtube-link-btn');
+            const youtubeSection = document.getElementById('youtube-link-section');
+            if (toggleYoutubeBtn && youtubeSection) {
+                toggleYoutubeBtn.addEventListener('click', () => {
+                    youtubeSection.classList.toggle('hidden');
+                });
+            }
+
+            // Staged Asynchronous Gallery & Video Upload Orchestration
             const projectForm = document.getElementById('project-form');
             const uploadModal = document.getElementById('upload-progress-modal');
             const modalProgressBar = document.getElementById('modal-progress-bar');
             const modalPercentageBadge = document.getElementById('modal-percentage-badge');
             const modalStatusText = document.getElementById('modal-status-text');
             const modalCountText = document.getElementById('modal-count-text');
+            const modalActiveFileIcon = document.getElementById('modal-active-file-icon');
             const modalActiveFileName = document.getElementById('modal-active-file-name');
             const modalActiveFileStatus = document.getElementById('modal-active-file-status');
+            const modalBytesText = document.getElementById('modal-bytes-text');
+            const modalSpeedText = document.getElementById('modal-speed-text');
             const modalErrorPanel = document.getElementById('modal-error-panel');
             const modalErrorMessage = document.getElementById('modal-error-message');
+            const modalCancelBtn = document.getElementById('modal-cancel-btn');
             const modalRetryBtn = document.getElementById('modal-retry-btn');
             const modalSkipBtn = document.getElementById('modal-skip-btn');
+            const stageBadgeImages = document.getElementById('stage-badge-images');
+            const stageBadgeVideo = document.getElementById('stage-badge-video');
 
             let isStagedUploading = false;
+            let currentActiveXhr = null;
+
+            if (modalCancelBtn) {
+                modalCancelBtn.addEventListener('click', () => {
+                    if (currentActiveXhr) {
+                        currentActiveXhr.abort();
+                        currentActiveXhr = null;
+                    }
+                    isStagedUploading = false;
+                    if (uploadModal) uploadModal.classList.add('hidden');
+                    const saveBtn = document.getElementById('save-project-btn');
+                    if (saveBtn) {
+                        saveBtn.disabled = false;
+                        saveBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+                    }
+                });
+            }
 
             if (projectForm) {
                 projectForm.addEventListener('submit', function(e) {
-                    // Prevent double submission if upload is in progress
                     if (isStagedUploading) {
                         e.preventDefault();
                         return;
@@ -826,21 +1026,27 @@
                     const galleryFiles = fileInput && fileInput.files ? Array.from(fileInput.files) : [];
                     const activeVideoLinks = Array.from(document.querySelectorAll('input[name="gallery_videos[]"]'))
                         .filter(input => input.value.trim() !== '');
+                    const hasSelectedVideo = selectedVideoFile !== null || (submittedVideoKey && submittedVideoKey.value.trim() !== '');
+                    const totalVideoCount = activeVideoLinks.length + (hasSelectedVideo ? 1 : 0);
 
-                    const totalItems = persistedTempCount + galleryFiles.length + activeVideoLinks.length;
+                    const totalItems = persistedTempCount + galleryFiles.length + totalVideoCount;
                     if (totalItems > 10) {
                         e.preventDefault();
-                        alert(`Total gallery quota is max 10 items (photos and videos combined). Currently proposed: ${totalItems} items (${persistedTempCount + galleryFiles.length} photos and ${activeVideoLinks.length} videos). Please reduce items.`);
+                        alert(`Total gallery quota is maximum 10 items (photos and videos combined). Currently submitted: ${totalItems} items. Please reduce your selection.`);
                         return;
                     }
 
-                    if (galleryFiles.length === 0) {
+                    const hasImagesToUpload = galleryFiles.length > 0;
+                    const hasVideoToUpload = selectedVideoFile !== null && (!submittedVideoKey || !submittedVideoKey.value);
+
+                    // If nothing needs staged upload, proceed with native submit
+                    if (!hasImagesToUpload && !hasVideoToUpload) {
                         const saveBtn = document.getElementById('save-project-btn');
                         if (saveBtn) {
                             saveBtn.disabled = true;
                             saveBtn.classList.add('opacity-70', 'cursor-not-allowed');
                         }
-                        return; // Proceed with native form submit
+                        return;
                     }
 
                     e.preventDefault();
@@ -858,124 +1064,271 @@
                         }
                     }
 
-                    let currentIndex = 0;
-                    const totalFiles = galleryFiles.length;
                     const tempPaths = [];
 
-                    function uploadNextFile() {
-                        if (currentIndex >= totalFiles) {
-                            if (modalStatusText) modalStatusText.textContent = 'Menyimpan data proyek...';
-                            if (modalProgressBar) modalProgressBar.style.width = '100%';
-                            if (modalPercentageBadge) modalPercentageBadge.textContent = '100%';
+                    // Setup stage indicator pills
+                    if (stageBadgeImages) {
+                        if (!hasImagesToUpload) {
+                            stageBadgeImages.classList.add('opacity-40');
+                        } else {
+                            stageBadgeImages.classList.remove('opacity-40');
+                        }
+                    }
+                    if (stageBadgeVideo) {
+                        if (!hasVideoToUpload) {
+                            stageBadgeVideo.classList.add('opacity-40');
+                        } else {
+                            stageBadgeVideo.classList.remove('opacity-40');
+                        }
+                    }
 
-                            tempPaths.forEach(p => {
-                                const hidden = document.createElement('input');
-                                hidden.type = 'hidden';
-                                hidden.name = 'temp_gallery_images[]';
-                                hidden.value = p;
-                                projectForm.appendChild(hidden);
-                            });
+                    // Start Phase 1: Upload gallery images
+                    if (hasImagesToUpload) {
+                        startImageUploads();
+                    } else if (hasVideoToUpload) {
+                        startVideoUpload();
+                    }
 
-                            fileInput.value = '';
-                            projectForm.submit();
-                            return;
+                    function startImageUploads() {
+                        let currentIndex = 0;
+                        const totalFiles = galleryFiles.length;
+
+                        if (stageBadgeImages) {
+                            stageBadgeImages.classList.add('border-primary', 'bg-primary/10', 'text-primary');
                         }
 
-                        const file = galleryFiles[currentIndex];
-                        if (modalCountText) modalCountText.textContent = `${currentIndex + 1} / ${totalFiles}`;
-                        if (modalActiveFileName) modalActiveFileName.textContent = file.name;
-                        if (modalActiveFileStatus) modalActiveFileStatus.textContent = '0%';
-                        if (modalStatusText) modalStatusText.textContent = `Mengunggah foto (${currentIndex + 1} dari ${totalFiles})`;
-                        if (modalErrorPanel) modalErrorPanel.classList.add('hidden');
-
-                        const overallPercentBefore = Math.round((currentIndex / totalFiles) * 100);
-                        if (modalProgressBar) modalProgressBar.style.width = `${overallPercentBefore}%`;
-                        if (modalPercentageBadge) modalPercentageBadge.textContent = `${overallPercentBefore}%`;
-
-                        const formData = new FormData();
-                        formData.append('file', file);
-                        const tokenEl = document.querySelector('input[name="_token"]');
-                        if (tokenEl) formData.append('_token', tokenEl.value);
-
-                        const xhr = new XMLHttpRequest();
-                        xhr.open('POST', '{{ route("projects.upload-temp-gallery") }}', true);
-                        xhr.setRequestHeader('Accept', 'application/json');
-                        xhr.timeout = 60000;
-
-                        xhr.upload.onprogress = function(event) {
-                            if (event.lengthComputable) {
-                                const filePercent = Math.round((event.loaded / event.total) * 100);
-                                if (modalActiveFileStatus) modalActiveFileStatus.textContent = `${filePercent}%`;
-                                const totalPercent = Math.round(((currentIndex + (event.loaded / event.total)) / totalFiles) * 100);
-                                if (modalProgressBar) modalProgressBar.style.width = `${totalPercent}%`;
-                                if (modalPercentageBadge) modalPercentageBadge.textContent = `${totalPercent}%`;
+                        function uploadNextFile() {
+                            if (currentIndex >= totalFiles) {
+                                if (stageBadgeImages) {
+                                    stageBadgeImages.classList.remove('border-primary', 'bg-primary/10', 'text-primary');
+                                    stageBadgeImages.classList.add('border-success/30', 'bg-success/10', 'text-success');
+                                }
+                                if (hasVideoToUpload) {
+                                    startVideoUpload();
+                                } else {
+                                    finalizeSubmission();
+                                }
+                                return;
                             }
-                        };
 
-                        xhr.onload = function() {
-                            if (xhr.status === 200) {
+                            const file = galleryFiles[currentIndex];
+                            if (modalCountText) modalCountText.textContent = `${currentIndex + 1} / ${totalFiles}`;
+                            if (modalActiveFileName) modalActiveFileName.textContent = file.name;
+                            if (modalActiveFileStatus) modalActiveFileStatus.textContent = '0%';
+                            if (modalStatusText) modalStatusText.textContent = `Uploading photo (${currentIndex + 1} of ${totalFiles})`;
+                            if (modalErrorPanel) modalErrorPanel.classList.add('hidden');
+                            if (modalBytesText) modalBytesText.textContent = `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
+                            if (modalSpeedText) modalSpeedText.textContent = '';
+
+                            const overallPercent = Math.round((currentIndex / (totalFiles + (hasVideoToUpload ? 1 : 0))) * 100);
+                            if (modalProgressBar) modalProgressBar.style.width = `${overallPercent}%`;
+                            if (modalPercentageBadge) modalPercentageBadge.textContent = `${overallPercent}%`;
+
+                            const formData = new FormData();
+                            formData.append('file', file);
+                            const tokenEl = document.querySelector('input[name="_token"]');
+                            if (tokenEl) formData.append('_token', tokenEl.value);
+
+                            const xhr = new XMLHttpRequest();
+                            currentActiveXhr = xhr;
+                            xhr.open('POST', '{{ route("projects.upload-temp-gallery") }}', true);
+                            xhr.setRequestHeader('Accept', 'application/json');
+                            xhr.timeout = 60000;
+
+                            xhr.upload.onprogress = function(event) {
+                                if (event.lengthComputable) {
+                                    const filePercent = Math.round((event.loaded / event.total) * 100);
+                                    if (modalActiveFileStatus) modalActiveFileStatus.textContent = `${filePercent}%`;
+                                }
+                            };
+
+                            xhr.onload = function() {
+                                if (xhr.status === 200) {
+                                    try {
+                                        const res = JSON.parse(xhr.responseText);
+                                        if (res.status === 'success' && res.temp_path) {
+                                            tempPaths.push(res.temp_path);
+                                            currentIndex++;
+                                            uploadNextFile();
+                                            return;
+                                        }
+                                    } catch(err) {}
+                                }
+                                handleFileError(xhr);
+                            };
+
+                            xhr.onerror = function() { handleFileError(xhr); };
+                            xhr.ontimeout = function() {
+                                handleFileError({ status: 408, responseText: JSON.stringify({ message: `Upload timed out for photo ${file.name}.` }) });
+                            };
+
+                            function handleFileError(xhrErr) {
+                                let msg = `Failed to upload photo ${file.name}.`;
                                 try {
-                                    const res = JSON.parse(xhr.responseText);
-                                    if (res.status === 'success' && res.temp_path) {
-                                        tempPaths.push(res.temp_path);
+                                    const res = JSON.parse(xhrErr.responseText);
+                                    if (res.message) msg = res.message;
+                                } catch(e) {}
+
+                                if (modalErrorMessage) modalErrorMessage.textContent = msg;
+                                if (modalErrorPanel) modalErrorPanel.classList.remove('hidden');
+                                if (modalSkipBtn) {
+                                    modalSkipBtn.classList.remove('hidden');
+                                    modalSkipBtn.onclick = function() {
+                                        modalErrorPanel.classList.add('hidden');
                                         currentIndex++;
                                         uploadNextFile();
-                                        return;
-                                    }
-                                } catch(err) {}
-                            }
-                            handleUploadError(xhr);
-                        };
-
-                        xhr.onerror = function() {
-                            handleUploadError(xhr);
-                        };
-
-                        xhr.ontimeout = function() {
-                            handleUploadError({ status: 408, responseText: JSON.stringify({ message: `Waktu unggah foto ${file.name} habis (timeout). Periksa koneksi internet Anda.` }) });
-                        };
-
-                        function handleUploadError(xhr) {
-                            let msg = `Gagal mengunggah ${file.name}. Silakan coba lagi.`;
-                            if (xhr.status === 419) {
-                                msg = 'Sesi Anda telah kedaluwarsa (CSRF token expired). Silakan muat ulang halaman.';
-                            } else {
-                                try {
-                                    const res = JSON.parse(xhr.responseText);
-                                    if (res.message) msg = res.message;
-                                } catch(err) {}
-                            }
-
-                            if (modalErrorMessage) modalErrorMessage.textContent = msg;
-                            if (modalErrorPanel) modalErrorPanel.classList.remove('hidden');
-                            if (modalActiveFileStatus) modalActiveFileStatus.textContent = 'Gagal';
-                            if (window.lucide && typeof window.lucide.createIcons === 'function' && modalErrorPanel) {
-                                window.lucide.createIcons({ root: modalErrorPanel });
-                            }
-
-                            if (modalRetryBtn) {
-                                if (xhr.status === 419) {
-                                    modalRetryBtn.classList.add('hidden');
-                                } else {
-                                    modalRetryBtn.classList.remove('hidden');
+                                    };
+                                }
+                                if (modalRetryBtn) {
                                     modalRetryBtn.onclick = function() {
+                                        modalErrorPanel.classList.add('hidden');
                                         uploadNextFile();
                                     };
                                 }
                             }
 
-                            if (modalSkipBtn) {
-                                modalSkipBtn.onclick = function() {
-                                    currentIndex++;
-                                    uploadNextFile();
+                            xhr.send(formData);
+                        }
+
+                        uploadNextFile();
+                    }
+
+                    function startVideoUpload() {
+                        if (!selectedVideoFile) {
+                            finalizeSubmission();
+                            return;
+                        }
+
+                        if (stageBadgeVideo) {
+                            stageBadgeVideo.classList.add('border-primary', 'bg-primary/10', 'text-primary');
+                        }
+
+                        if (modalActiveFileIcon) {
+                            modalActiveFileIcon.setAttribute('data-lucide', 'film');
+                        }
+                        if (modalActiveFileName) modalActiveFileName.textContent = selectedVideoFile.name;
+                        if (modalStatusText) modalStatusText.textContent = 'Generating Cloudflare R2 upload ticket...';
+                        if (modalCountText) modalCountText.textContent = 'Video Stage';
+                        if (modalErrorPanel) modalErrorPanel.classList.add('hidden');
+                        if (modalSkipBtn) modalSkipBtn.classList.add('hidden');
+
+                        const csrfToken = document.querySelector('input[name="_token"]')?.value || '';
+
+                        // Step A: Request Presigned URL from Laravel backend
+                        fetch('{{ route("projects.video.presign-upload") }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken,
+                            },
+                            body: JSON.stringify({
+                                filename: selectedVideoFile.name,
+                                file_size: selectedVideoFile.size,
+                                mime_type: selectedVideoFile.type || 'video/mp4',
+                            }),
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.status !== 'success' || !data.upload_url || !data.key) {
+                                throw new Error(data.message || 'Failed to acquire Cloudflare R2 upload authorization.');
+                            }
+
+                            // Step B: Direct PUT Stream to Cloudflare R2
+                            if (modalStatusText) modalStatusText.textContent = 'Uploading video to Cloudflare R2...';
+                            const xhr = new XMLHttpRequest();
+                            currentActiveXhr = xhr;
+                            xhr.open('PUT', data.upload_url, true);
+                            xhr.setRequestHeader('Content-Type', selectedVideoFile.type || 'video/mp4');
+                            xhr.timeout = 300000; // 5 minutes timeout for 50MB
+
+                            let startTime = Date.now();
+
+                            xhr.upload.onprogress = function(event) {
+                                if (event.lengthComputable) {
+                                    const percent = Math.round((event.loaded / event.total) * 100);
+                                    if (modalActiveFileStatus) modalActiveFileStatus.textContent = `${percent}%`;
+                                    if (modalProgressBar) modalProgressBar.style.width = `${percent}%`;
+                                    if (modalPercentageBadge) modalPercentageBadge.textContent = `${percent}%`;
+
+                                    const loadedMb = (event.loaded / (1024 * 1024)).toFixed(1);
+                                    const totalMb = (event.total / (1024 * 1024)).toFixed(1);
+                                    if (modalBytesText) modalBytesText.textContent = `${loadedMb} MB / ${totalMb} MB`;
+
+                                    const elapsedSeconds = (Date.now() - startTime) / 1000;
+                                    if (elapsedSeconds > 0.5) {
+                                        const speedBytesPerSec = event.loaded / elapsedSeconds;
+                                        const speedMbPerSec = (speedBytesPerSec / (1024 * 1024)).toFixed(1);
+                                        const remainingBytes = event.total - event.loaded;
+                                        const etaSeconds = Math.round(remainingBytes / speedBytesPerSec);
+                                        if (modalSpeedText) {
+                                            modalSpeedText.textContent = `${speedMbPerSec} MB/s • ~${etaSeconds}s remaining`;
+                                        }
+                                    }
+                                }
+                            };
+
+                            xhr.onload = function() {
+                                if (xhr.status === 200 || xhr.status === 204) {
+                                    if (submittedVideoKey) submittedVideoKey.value = data.key;
+                                    if (submittedVideoSize) submittedVideoSize.value = selectedVideoFile.size;
+                                    if (submittedVideoMime) submittedVideoMime.value = selectedVideoFile.type || 'video/mp4';
+
+                                    if (stageBadgeVideo) {
+                                        stageBadgeVideo.classList.remove('border-primary', 'bg-primary/10', 'text-primary');
+                                        stageBadgeVideo.classList.add('border-success/30', 'bg-success/10', 'text-success');
+                                    }
+
+                                    finalizeSubmission();
+                                } else {
+                                    handleVideoError(`Cloudflare R2 upload failed with HTTP status ${xhr.status}.`);
+                                }
+                            };
+
+                            xhr.onerror = function() {
+                                handleVideoError('Connection to Cloudflare R2 was interrupted during video transfer.');
+                            };
+
+                            xhr.ontimeout = function() {
+                                handleVideoError('Cloudflare R2 video transfer timed out. Please check your internet connection.');
+                            };
+
+                            xhr.send(selectedVideoFile);
+                        })
+                        .catch(err => {
+                            handleVideoError(err.message || 'An error occurred while authorizing video upload.');
+                        });
+
+                        function handleVideoError(msg) {
+                            if (modalErrorMessage) modalErrorMessage.textContent = msg;
+                            if (modalErrorPanel) modalErrorPanel.classList.remove('hidden');
+                            if (modalActiveFileStatus) modalActiveFileStatus.textContent = 'Failed';
+                            if (modalRetryBtn) {
+                                modalRetryBtn.onclick = function() {
+                                    modalErrorPanel.classList.add('hidden');
+                                    startVideoUpload();
                                 };
                             }
                         }
-
-                        xhr.send(formData);
                     }
 
-                    uploadNextFile();
+                    function finalizeSubmission() {
+                        if (modalStatusText) modalStatusText.textContent = 'Saving project data...';
+                        if (modalProgressBar) modalProgressBar.style.width = '100%';
+                        if (modalPercentageBadge) modalPercentageBadge.textContent = '100%';
+
+                        tempPaths.forEach(p => {
+                            const hidden = document.createElement('input');
+                            hidden.type = 'hidden';
+                            hidden.name = 'temp_gallery_images[]';
+                            hidden.value = p;
+                            projectForm.appendChild(hidden);
+                        });
+
+                        if (fileInput) fileInput.value = '';
+                        if (videoFileInput) videoFileInput.value = '';
+                        projectForm.submit();
+                    }
                 });
             }
 

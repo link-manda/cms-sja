@@ -29,8 +29,8 @@
                 <li class="menu-title">
                     <span>Overview</span>
                 </li>
-                <li class="menu-item">
-                    <a class="menu-link" href="{{ route('dashboard') }}">
+                <li class="menu-item {{ request()->routeIs('dashboard*') ? 'active' : '' }}">
+                    <a class="menu-link {{ request()->routeIs('dashboard*') ? 'active' : '' }}" href="{{ route('dashboard') }}">
                         <span class="menu-icon"><i data-lucide="layout-dashboard"></i></span>
                         <div class="menu-text">Dashboard</div>
                     </a>
@@ -39,20 +39,20 @@
                 <li class="menu-title">
                     <span>Content Management</span>
                 </li>
-                <li class="menu-item">
-                    <a class="menu-link" href="{{ route('projects.index') }}">
+                <li class="menu-item {{ request()->routeIs('projects.*') ? 'active' : '' }}">
+                    <a class="menu-link {{ request()->routeIs('projects.*') ? 'active' : '' }}" href="{{ route('projects.index') }}">
                         <span class="menu-icon"><i data-lucide="folder-kanban"></i></span>
                         <div class="menu-text">Projects</div>
                     </a>
                 </li>
-                <li class="menu-item">
-                    <a class="menu-link" href="{{ route('categories.index') }}">
+                <li class="menu-item {{ request()->routeIs('categories.*') ? 'active' : '' }}">
+                    <a class="menu-link {{ request()->routeIs('categories.*') ? 'active' : '' }}" href="{{ route('categories.index') }}">
                         <span class="menu-icon"><i data-lucide="tags"></i></span>
                         <div class="menu-text">Categories</div>
                     </a>
                 </li>
-                <li class="menu-item">
-                    <a class="menu-link" href="{{ route('calculator.index') }}">
+                <li class="menu-item {{ request()->routeIs('calculator.*') ? 'active' : '' }}">
+                    <a class="menu-link {{ request()->routeIs('calculator.*') ? 'active' : '' }}" href="{{ route('calculator.index') }}">
                         <span class="menu-icon"><i data-lucide="calculator"></i></span>
                         <div class="menu-text">Price Calculator</div>
                     </a>
@@ -61,8 +61,8 @@
                 <li class="menu-title">
                     <span>System</span>
                 </li>
-                <li class="menu-item">
-                    <a class="menu-link" href="{{ route('settings.index') }}">
+                <li class="menu-item {{ request()->routeIs('settings.*') ? 'active' : '' }}">
+                    <a class="menu-link {{ request()->routeIs('settings.*') ? 'active' : '' }}" href="{{ route('settings.index') }}">
                         <span class="menu-icon"><i data-lucide="settings"></i></span>
                         <div class="menu-text">Global Settings</div>
                     </a>
@@ -71,8 +71,8 @@
                 <li class="menu-title">
                     <span>Account</span>
                 </li>
-                <li class="menu-item">
-                    <a class="menu-link" href="{{ route('profile.edit') }}">
+                <li class="menu-item {{ request()->routeIs('profile.*') ? 'active' : '' }}">
+                    <a class="menu-link {{ request()->routeIs('profile.*') ? 'active' : '' }}" href="{{ route('profile.edit') }}">
                         <span class="menu-icon"><i data-lucide="user"></i></span>
                         <div class="menu-text">Profile</div>
                     </a>

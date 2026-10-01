@@ -32,3 +32,6 @@ Thumbs.db
 /graphify-out
 .agents
 .claude
+User_Manual_PT_Sistem_Jaya_Abadi_CMS.docx
+*.docx
+/scripts/
