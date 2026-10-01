@@ -16,10 +16,11 @@ class DatabaseSeeder extends Seeder
     {
         // Ensure admin user exists
         if (! User::where('email', 'admin@sja.com')->exists()) {
-            User::factory()->create([
+            User::forceCreate([
                 'name' => 'Administrator',
                 'email' => 'admin@sja.com',
                 'password' => bcrypt('password123'),
+                'email_verified_at' => now(),
             ]);
         }
 
