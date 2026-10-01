@@ -187,6 +187,11 @@ jobs:
             Header always unset X-Powered-By
         </IfModule>
 
+        # PHP Upload limits & Memory configuration (LiteSpeed/LSAPI)
+        php_value upload_max_filesize 64M
+        php_value post_max_size 64M
+        php_value memory_limit 256M
+
         # Block access to sensitive files
         <FilesMatch "(\.env|\.git|composer\.(json|lock)|phpunit\.xml|\.htaccess)$">
             Order Allow,Deny
