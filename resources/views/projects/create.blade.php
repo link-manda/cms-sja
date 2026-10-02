@@ -238,7 +238,7 @@
                     <div class="flex items-center justify-between mb-2">
                         <div>
                             <h6 class="text-sm font-semibold text-default-800 flex items-center gap-1.5">
-                                <i class="size-4 text-primary" data-lucide="video"></i> Project Video Showcase (Cloudflare R2) - Optional
+                                <i class="size-4 text-primary" data-lucide="video"></i> Project Video Showcase - Optional
                             </h6>
                             <p class="text-xs text-default-500 mt-0.5">Upload MP4 or WebM video (up to 50 MB). Videos are uploaded directly to high-speed cloud storage.</p>
                         </div>

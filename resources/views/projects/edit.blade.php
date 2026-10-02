@@ -166,14 +166,14 @@
                         <!-- Native Drag and Drop Zone -->
                         <div id="gallery-dropzone" class="relative flex flex-col items-center justify-center p-8 border-2 border-dashed border-default-300 rounded-lg bg-default-50 hover:bg-default-100 transition-colors cursor-pointer group">
                             <input class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" id="gallery_images" name="gallery_images[]" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" multiple />
-                            
+
                             <div class="flex flex-col items-center pointer-events-none">
                                 <i class="size-10 text-default-400 group-hover:text-primary transition-colors mb-3" data-lucide="upload-cloud"></i>
                                 <p class="text-sm font-medium text-default-700">Drag & Drop your images here</p>
                                 <p class="text-xs text-default-400 mt-1">or click to browse from your computer</p>
                             </div>
                         </div>
-                        
+
                         <!-- File Preview Area -->
                         <div id="gallery-preview" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-4 hidden">
                             <!-- JS will inject previews here -->
@@ -216,7 +216,7 @@
                     <div class="flex items-center justify-between mb-2">
                         <div>
                             <h6 class="text-sm font-semibold text-default-800 flex items-center gap-1.5">
-                                <i class="size-4 text-primary" data-lucide="video"></i> Project Video Showcase (Cloudflare R2) - Optional
+                                <i class="size-4 text-primary" data-lucide="video"></i> Project Video Showcase- Optional
                             </h6>
                             <p class="text-xs text-default-500 mt-0.5">Upload MP4 or WebM video (up to 50 MB). Videos are uploaded directly to Cloudflare R2 with zero egress fees.</p>
                         </div>
@@ -475,9 +475,9 @@
                         @else
                             <img src="{{ asset('storage/' . $image->image_path) }}" class="w-full h-32 object-cover" alt="Gallery Image" loading="lazy">
                         @endif
-                        
+
                         <!-- Delete Button (Triggers Modal) -->
-                        <button type="button" 
+                        <button type="button"
                                 class="dynamic-action-btn absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-danger/90 hover:bg-danger text-white p-1.5 rounded-full flex items-center justify-center shadow-lg transform hover:scale-110 transition-transform cursor-pointer"
                                 data-hs-overlay="#dynamic-action-modal"
                                 data-action-url="{{ route('projects.gallery.delete', [$project, $image->id]) }}"
@@ -1405,9 +1405,9 @@
                     button.addEventListener('click', function () {
                         const actionUrl = this.getAttribute('data-action-url');
                         const actionType = this.getAttribute('data-action-type');
-                        
+
                         modalForm.action = actionUrl;
-                        
+
                         if (actionType === 'delete-gallery') {
                             modalMethod.value = 'DELETE';
                             modalTitle.textContent = 'Delete Gallery Item?';

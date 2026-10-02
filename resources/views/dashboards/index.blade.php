@@ -128,7 +128,7 @@
                         <div class="flex items-center justify-center rounded-lg size-8 bg-sky-500/10 text-sky-500 shrink-0">
                             <i class="size-4.5" data-lucide="cloud"></i>
                         </div>
-                        <h6 class="card-title text-base font-semibold text-default-800">Cloud Media Storage (R2)</h6>
+                        <h6 class="card-title text-base font-semibold text-default-800">Media Storage</h6>
                     </div>
                     <div class="flex items-center gap-2">
                         <span id="r2-status-badge" class="px-2 py-0.5 text-xs font-semibold rounded inline-flex items-center gap-1 {{ $r2Storage['bg_color'] }} {{ $r2Storage['text_color'] }}">
