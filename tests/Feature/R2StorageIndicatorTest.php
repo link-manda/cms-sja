@@ -44,7 +44,7 @@ class R2StorageIndicatorTest extends TestCase
         $response->assertViewHas('r2Storage');
         $response->assertViewHas('completedPercentage');
         $response->assertViewHas('ongoingPercentage');
-        $response->assertSee('Cloud Media Storage (R2)');
+        $response->assertSee('Media Storage');
         $response->assertSee('10.00 GB');
         $response->assertSee('role="progressbar"', false);
         $response->assertSee('btn-sync-r2');
