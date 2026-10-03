@@ -452,7 +452,7 @@
                 </div>
                 <div id="stage-badge-video" class="p-2 rounded-lg border border-default-200 bg-default-50 flex items-center gap-2 text-default-600 transition-colors">
                     <span class="size-5 rounded-full bg-default-200 flex items-center justify-center text-[10px] font-bold shrink-0">2</span>
-                    <span class="truncate">Cloudflare R2 Video</span>
+                    <span class="truncate">Media Storage Video</span>
                 </div>
             </div>
 

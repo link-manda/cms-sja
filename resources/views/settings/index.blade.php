@@ -8,7 +8,7 @@
             <div class="card-header">
                 <h6 class="card-title text-base font-semibold text-default-800">Manage Website Information</h6>
             </div>
-            
+
             <div class="card-body">
                 @if (session('success'))
                     <div class="bg-success/10 text-success border border-success/20 text-sm rounded-md py-3 px-5 mb-5">
@@ -18,9 +18,9 @@
 
                 <form method="POST" action="{{ route('settings.update') }}" class="space-y-6">
                     @csrf
-                    
+
                     <h5 class="text-lg font-semibold text-default-800 border-b border-default-200 pb-2">Global SEO & Metadata</h5>
-                    
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
                         <div>
                             <label class="block font-medium text-default-900 text-sm mb-2" for="site_title">Homepage Meta Title</label>
@@ -33,7 +33,7 @@
                     </div>
 
                     <h5 class="text-lg font-semibold text-default-800 border-b border-default-200 pb-2 mt-8">Contact Information</h5>
-                    
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div>
                             <label class="block font-medium text-default-900 text-sm mb-2" for="contact_whatsapp">WhatsApp Number (CTA)</label>
@@ -47,7 +47,7 @@
                     </div>
 
                     <h5 class="text-lg font-semibold text-default-800 border-b border-default-200 pb-2 mt-8">Company Details</h5>
-                    
+
                     <div class="grid grid-cols-1 gap-5">
                         <div>
                             <label class="block font-medium text-default-900 text-sm mb-2" for="company_address">Office Address</label>
@@ -56,7 +56,7 @@
                     </div>
 
                     <h5 class="text-lg font-semibold text-default-800 border-b border-default-200 pb-2 mt-8">Social Media Links</h5>
-                    
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div>
                             <label class="block font-medium text-default-900 text-sm mb-2" for="social_instagram">Instagram URL</label>
@@ -80,8 +80,8 @@
         <div class="card" id="backup-card">
             <div class="card-header flex justify-between items-center flex-wrap gap-4 border-b border-default-200">
                 <div>
-                    <h6 class="card-title text-base font-semibold text-default-800">Database Backups (Cloudflare R2)</h6>
-                    <p class="text-xs text-default-400 mt-1">Monthly MySQL backups encrypted with AES-256-CBC, kept on a rolling 12-month retention and stored securely on Cloudflare R2.</p>
+                    <h6 class="card-title text-base font-semibold text-default-800">Database Backups</h6>
+                    <p class="text-xs text-default-400 mt-1">Monthly MySQL backups encrypted with AES-256-CBC, kept on a rolling 12-month retention and stored securely on Backup Storage.</p>
                 </div>
                 <div class="flex items-center gap-2">
                     <button type="button" id="btn-sync-backups" aria-label="Sync backups" title="Sync with Cloudflare R2" class="btn border border-default-200 text-default-700 text-xs px-3.5 py-2 inline-flex items-center gap-2 rounded-md hover:bg-default-100 transition-colors cursor-pointer">
@@ -191,7 +191,7 @@
                                                 <i data-lucide="database" class="size-6"></i>
                                             </div>
                                             <p class="font-medium text-default-600 text-sm">No Database Backups Yet</p>
-                                            <p class="text-xs text-default-400 max-w-md">Backups are created automatically at 02:00 on the 1st of every month, or you can press the "Backup Now" button above to create one directly on Cloudflare R2.</p>
+                                            <p class="text-xs text-default-400 max-w-md">Backups are created automatically at 02:00 on the 1st of every month, or you can press the "Backup Now" button above to create one directly on Backup Storage.</p>
                                         </div>
                                     </td>
                                 </tr>
@@ -212,7 +212,7 @@
                         <i class="size-6" data-lucide="database-backup"></i>
                     </div>
                     <h3 id="backup-modal-title" class="mb-2 text-xl font-bold text-default-800">Create Database Backup?</h3>
-                    <p class="text-default-500 font-sans text-sm">The system will export a snapshot of the current MySQL database, compress it, encrypt it with AES-256-CBC, and securely upload it to Cloudflare R2.</p>
+                    <p class="text-default-500 font-sans text-sm">The system will export a snapshot of the current MySQL database, compress it, encrypt it with AES-256-CBC, and securely upload it to Backup Storage.</p>
                     <div class="mt-8 flex justify-center gap-3">
                         <button type="button" class="btn bg-default-200 text-default-800 hover:bg-default-300 transition-colors" data-hs-overlay="#backup-confirm-modal">Cancel</button>
                         <button type="button" id="modal-confirm-backup-btn" class="btn bg-primary text-white hover:bg-primary-600 transition-colors shadow-sm inline-flex items-center gap-2">

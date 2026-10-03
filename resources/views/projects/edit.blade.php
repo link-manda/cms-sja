@@ -218,7 +218,7 @@
                             <h6 class="text-sm font-semibold text-default-800 flex items-center gap-1.5">
                                 <i class="size-4 text-primary" data-lucide="video"></i> Project Video Showcase- Optional
                             </h6>
-                            <p class="text-xs text-default-500 mt-0.5">Upload MP4 or WebM video (up to 50 MB). Videos are uploaded directly to Cloudflare R2 with zero egress fees.</p>
+                            <p class="text-xs text-default-500 mt-0.5">Upload MP4 or WebM video (up to 50 MB). Videos are uploaded directly to Media Storage with zero egress fees.</p>
                         </div>
                     </div>
 
@@ -239,7 +239,7 @@
                                         </div>
                                         <div class="truncate">
                                             <div class="flex items-center gap-2">
-                                                <p class="text-sm font-semibold text-default-900 truncate">Active Cloudflare R2 Video</p>
+                                                <p class="text-sm font-semibold text-default-900 truncate">Active Media Storage Video</p>
                                                 <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-primary/15 text-primary border border-primary/20">Saved</span>
                                             </div>
                                             <p class="text-xs text-default-500">
@@ -538,7 +538,7 @@
                 </div>
                 <div id="stage-badge-video" class="p-2 rounded-lg border border-default-200 bg-default-50 flex items-center gap-2 text-default-600 transition-colors">
                     <span class="size-5 rounded-full bg-default-200 flex items-center justify-center text-[10px] font-bold shrink-0">2</span>
-                    <span class="truncate">Cloudflare R2 Video</span>
+                    <span class="truncate">Media Storage Video</span>
                 </div>
             </div>
 
