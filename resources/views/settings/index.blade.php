@@ -200,14 +200,14 @@
     </div>
 
     <!-- Database Backup Confirmation Modal -->
-    <div id="backup-confirm-modal" class="hs-overlay hidden size-full fixed top-0 start-0 z-[80] overflow-x-hidden overflow-y-auto pointer-events-none">
+    <div id="backup-confirm-modal" class="hs-overlay hidden size-full fixed top-0 start-0 z-[80] overflow-x-hidden overflow-y-auto pointer-events-none" role="dialog" tabindex="-1" aria-labelledby="backup-modal-title">
         <div class="hs-overlay-open:mt-7 hs-overlay-open:opacity-100 hs-overlay-open:duration-500 mt-0 opacity-0 ease-out transition-all sm:max-w-lg sm:w-full m-3 sm:mx-auto min-h-[calc(100%-3.5rem)] flex items-center">
             <div class="w-full flex flex-col bg-white border shadow-sm rounded-xl pointer-events-auto dark:bg-zinc-900 dark:border-zinc-800 dark:shadow-slate-700/70">
                 <div class="p-6 overflow-y-auto text-center">
                     <div class="inline-flex justify-center items-center size-[62px] rounded-full border-4 border-primary/20 bg-primary/10 text-primary mb-4">
                         <i class="size-6" data-lucide="database-backup"></i>
                     </div>
-                    <h3 class="mb-2 text-xl font-bold text-default-800">Buat Cadangan Database?</h3>
+                    <h3 id="backup-modal-title" class="mb-2 text-xl font-bold text-default-800">Buat Cadangan Database?</h3>
                     <p class="text-default-500 font-sans text-sm">Sistem akan mengekspor snapshot basis data MySQL saat ini, mengompresi, mengenkripsi dengan AES-256-CBC, dan mengunggahnya secara aman ke Cloudflare R2.</p>
                     <div class="mt-8 flex justify-center gap-3">
                         <button type="button" class="btn bg-default-200 text-default-800 hover:bg-default-300 transition-colors" data-hs-overlay="#backup-confirm-modal">Batal</button>
@@ -235,9 +235,15 @@ document.addEventListener('DOMContentLoaded', function () {
     const successText = document.getElementById('backup-success-text');
     const errorText = document.getElementById('backup-error-text');
 
+    let isSubmitting = false;
+
     if (!modalConfirmBtn || !btnBackup) return;
 
     modalConfirmBtn.addEventListener('click', function () {
+        if (isSubmitting) return;
+        isSubmitting = true;
+        modalConfirmBtn.disabled = true;
+
         // Dismiss confirmation modal
         if (window.HSOverlay && typeof window.HSOverlay.close === 'function') {
             window.HSOverlay.close('#backup-confirm-modal');
@@ -302,7 +308,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             }
 
-            // Restore card button to default state
+            // Restore in-flight guard and button states
+            isSubmitting = false;
+            modalConfirmBtn.disabled = false;
             btnBackup.disabled = false;
             btnBackup.classList.remove('pointer-events-none', 'opacity-60');
             if (backupIcon) {
