@@ -156,7 +156,8 @@ class DatabaseBackupR2Test extends TestCase
 
         $response->assertOk();
         $response->assertViewHas('backups');
-        $response->assertSee('Database Backups (Cloudflare R2)');
+        $response->assertSee('Cadangan Database (Cloudflare R2)');
+        $response->assertSee('Cadangkan Sekarang');
         $response->assertSee('Belum Ada Cadangan Database');
     }
 

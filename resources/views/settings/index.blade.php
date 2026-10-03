@@ -80,13 +80,17 @@
         <div class="card" id="backup-card">
             <div class="card-header flex justify-between items-center flex-wrap gap-4 border-b border-default-200">
                 <div>
-                    <h6 class="card-title text-base font-semibold text-default-800">Database Backups (Cloudflare R2)</h6>
+                    <h6 class="card-title text-base font-semibold text-default-800">Cadangan Database (Cloudflare R2)</h6>
                     <p class="text-xs text-default-400 mt-1">Cadangan bulanan MySQL terenkripsi AES-256-CBC dengan retensi bergulir 12 bulan yang tersimpan aman di Cloudflare R2.</p>
                 </div>
                 <div>
-                    <button type="button" id="btn-manual-backup" class="btn bg-primary text-white text-xs px-3.5 py-2 inline-flex items-center gap-2 rounded-md hover:bg-primary-600 transition-colors cursor-pointer shadow-sm">
+                    <button type="button" id="btn-manual-backup" data-hs-overlay="#backup-confirm-modal" class="btn bg-primary text-white text-xs px-3.5 py-2 inline-flex items-center gap-2 rounded-md hover:bg-primary-600 transition-colors cursor-pointer shadow-sm">
                         <i data-lucide="database-backup" id="backup-icon" class="size-4"></i>
-                        <span id="backup-btn-text">Backup Now</span>
+                        <svg id="backup-spinner" class="hidden inline-flex animate-spin size-4 text-white shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span id="backup-btn-text">Cadangkan Sekarang</span>
                     </button>
                 </div>
             </div>
@@ -183,7 +187,7 @@
                                                 <i data-lucide="database" class="size-6"></i>
                                             </div>
                                             <p class="font-medium text-default-600 text-sm">Belum Ada Cadangan Database</p>
-                                            <p class="text-xs text-default-400 max-w-md">Cadangan otomatis dibuat setiap awal bulan pukul 02:00, atau Anda dapat menekan tombol "Backup Now" di atas untuk membuat cadangan langsung ke Cloudflare R2.</p>
+                                            <p class="text-xs text-default-400 max-w-md">Cadangan otomatis dibuat setiap awal bulan pukul 02:00, atau Anda dapat menekan tombol "Cadangkan Sekarang" di atas untuk membuat cadangan langsung ke Cloudflare R2.</p>
                                         </div>
                                     </td>
                                 </tr>
@@ -194,37 +198,68 @@
             </div>
         </div>
     </div>
+
+    <!-- Database Backup Confirmation Modal -->
+    <div id="backup-confirm-modal" class="hs-overlay hidden size-full fixed top-0 start-0 z-[80] overflow-x-hidden overflow-y-auto pointer-events-none">
+        <div class="hs-overlay-open:mt-7 hs-overlay-open:opacity-100 hs-overlay-open:duration-500 mt-0 opacity-0 ease-out transition-all sm:max-w-lg sm:w-full m-3 sm:mx-auto min-h-[calc(100%-3.5rem)] flex items-center">
+            <div class="w-full flex flex-col bg-white border shadow-sm rounded-xl pointer-events-auto dark:bg-zinc-900 dark:border-zinc-800 dark:shadow-slate-700/70">
+                <div class="p-6 overflow-y-auto text-center">
+                    <div class="inline-flex justify-center items-center size-[62px] rounded-full border-4 border-primary/20 bg-primary/10 text-primary mb-4">
+                        <i class="size-6" data-lucide="database-backup"></i>
+                    </div>
+                    <h3 class="mb-2 text-xl font-bold text-default-800">Buat Cadangan Database?</h3>
+                    <p class="text-default-500 font-sans text-sm">Sistem akan mengekspor snapshot basis data MySQL saat ini, mengompresi, mengenkripsi dengan AES-256-CBC, dan mengunggahnya secara aman ke Cloudflare R2.</p>
+                    <div class="mt-8 flex justify-center gap-3">
+                        <button type="button" class="btn bg-default-200 text-default-800 hover:bg-default-300 transition-colors" data-hs-overlay="#backup-confirm-modal">Batal</button>
+                        <button type="button" id="modal-confirm-backup-btn" class="btn bg-primary text-white hover:bg-primary-600 transition-colors shadow-sm inline-flex items-center gap-2">
+                            <i data-lucide="database-backup" class="size-4"></i>
+                            <span>Ya, Cadangkan Sekarang</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @section('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const btnBackup = document.getElementById('btn-manual-backup');
+    const modalConfirmBtn = document.getElementById('modal-confirm-backup-btn');
     const backupIcon = document.getElementById('backup-icon');
+    const backupSpinner = document.getElementById('backup-spinner');
     const backupText = document.getElementById('backup-btn-text');
     const alertSuccess = document.getElementById('backup-alert-success');
     const alertError = document.getElementById('backup-alert-error');
     const successText = document.getElementById('backup-success-text');
     const errorText = document.getElementById('backup-error-text');
 
-    if (!btnBackup) return;
+    if (!modalConfirmBtn || !btnBackup) return;
 
-    btnBackup.addEventListener('click', function () {
-        if (!confirm('Apakah Anda yakin ingin membuat cadangan database sekarang ke Cloudflare R2?')) {
-            return;
+    modalConfirmBtn.addEventListener('click', function () {
+        // Dismiss confirmation modal
+        if (window.HSOverlay && typeof window.HSOverlay.close === 'function') {
+            window.HSOverlay.close('#backup-confirm-modal');
+        } else {
+            const modalEl = document.getElementById('backup-confirm-modal');
+            if (modalEl) modalEl.classList.add('hidden');
         }
 
         // Set UI loading state
         btnBackup.disabled = true;
         btnBackup.classList.add('pointer-events-none', 'opacity-60');
         if (backupIcon) {
-            backupIcon.classList.add('animate-spin');
+            backupIcon.classList.add('hidden');
+        }
+        if (backupSpinner) {
+            backupSpinner.classList.remove('hidden');
         }
         if (backupText) {
-            backupText.textContent = 'Memproses cadangan...';
+            backupText.textContent = 'Mencadangkan database...';
         }
-        alertSuccess.classList.add('hidden');
-        alertError.classList.add('hidden');
+        if (alertSuccess) alertSuccess.classList.add('hidden');
+        if (alertError) alertError.classList.add('hidden');
 
         fetch("{{ route('backups.store') }}", {
             method: 'POST',
@@ -245,10 +280,11 @@ document.addEventListener('DOMContentLoaded', function () {
             if (successText) {
                 successText.textContent = data.message || 'Cadangan database berhasil dibuat! Memperbarui halaman...';
             }
-            alertSuccess.classList.remove('hidden');
-
-            if (window.lucide && typeof window.lucide.createIcons === 'function') {
-                window.lucide.createIcons({ root: alertSuccess });
+            if (alertSuccess) {
+                alertSuccess.classList.remove('hidden');
+                if (window.lucide && typeof window.lucide.createIcons === 'function') {
+                    window.lucide.createIcons({ root: alertSuccess });
+                }
             }
 
             setTimeout(() => {
@@ -259,19 +295,24 @@ document.addEventListener('DOMContentLoaded', function () {
             if (errorText) {
                 errorText.textContent = error.message || 'Terjadi kesalahan saat memproses cadangan.';
             }
-            alertError.classList.remove('hidden');
-
-            if (window.lucide && typeof window.lucide.createIcons === 'function') {
-                window.lucide.createIcons({ root: alertError });
+            if (alertError) {
+                alertError.classList.remove('hidden');
+                if (window.lucide && typeof window.lucide.createIcons === 'function') {
+                    window.lucide.createIcons({ root: alertError });
+                }
             }
 
+            // Restore card button to default state
             btnBackup.disabled = false;
             btnBackup.classList.remove('pointer-events-none', 'opacity-60');
             if (backupIcon) {
-                backupIcon.classList.remove('animate-spin');
+                backupIcon.classList.remove('hidden');
+            }
+            if (backupSpinner) {
+                backupSpinner.classList.add('hidden');
             }
             if (backupText) {
-                backupText.textContent = 'Backup Now';
+                backupText.textContent = 'Cadangkan Sekarang';
             }
         });
     });
