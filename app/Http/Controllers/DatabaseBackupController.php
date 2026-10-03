@@ -24,6 +24,31 @@ class DatabaseBackupController extends Controller
     }
 
     /**
+     * Re-read the R2 bucket and refresh the cached backup list.
+     */
+    public function sync(DatabaseBackupService $backupService): JsonResponse
+    {
+        try {
+            $count = count($backupService->syncFromStorage());
+
+            return response()->json([
+                'status' => 'success',
+                'message' => $count === 1
+                    ? 'Sync complete. 1 backup found in Cloudflare R2.'
+                    : "Sync complete. {$count} backups found in Cloudflare R2.",
+                'count' => $count,
+            ]);
+        } catch (Throwable $e) {
+            Log::warning('Database backup sync failed: '.$e->getMessage());
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Sync failed. Cloudflare R2 could not be reached. Your previous backup list is unchanged.',
+            ], 500);
+        }
+    }
+
+    /**
      * Trigger an on-demand manual database backup.
      */
     public function store(DatabaseBackupService $backupService): JsonResponse

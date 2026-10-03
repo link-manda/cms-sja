@@ -282,54 +282,85 @@ class DatabaseBackupService
     public function fetchBackupsFromStorage(): array
     {
         try {
-            $contents = Storage::disk('r2')->listContents(self::BACKUP_DIRECTORY);
-            $backups = [];
-
-            foreach ($contents as $item) {
-                if (! $item->isFile()) {
-                    continue;
-                }
-
-                $cleanPath = str_replace('\\', '/', $item->path());
-                $filename = basename($cleanPath);
-
-                if (! preg_match('/^backup-sja-(scheduled|manual)-(\d{4}-\d{2}-\d{2}-\d{6})\.sql\.gz\.enc$/', $filename, $matches)) {
-                    continue;
-                }
-
-                $source = $matches[1];
-                $dateString = $matches[2];
-
-                try {
-                    $createdAt = Carbon::createFromFormat('Y-m-d-His', $dateString);
-                } catch (Throwable) {
-                    $createdAt = now();
-                }
-
-                $size = (int) ($item->fileSize() ?? 0);
-
-                $backups[] = [
-                    'filename' => $filename,
-                    'r2_path' => $cleanPath,
-                    'source' => $source,
-                    'size' => $size,
-                    'size_formatted' => $this->formatBytes($size),
-                    'created_at' => $createdAt,
-                    'created_at_formatted' => $createdAt ? $createdAt->format('d M Y, H:i:s') : '-',
-                ];
-            }
-
-            // Sort descending: newest backups first
-            usort($backups, function ($a, $b) {
-                return $b['created_at']->getTimestamp() <=> $a['created_at']->getTimestamp();
-            });
-
-            return $backups;
+            return $this->readBackupsFromStorage();
         } catch (Throwable $e) {
             Log::warning('Failed to list database backups from R2: '.$e->getMessage());
 
             return [];
         }
+    }
+
+    /**
+     * Re-read the bucket and replace the cached list. Unlike listBackups(), an R2 failure
+     * is thrown to the caller and the previously cached list is left untouched.
+     *
+     * @return array<int, array<string, mixed>>
+     *
+     * @throws Throwable
+     */
+    public function syncFromStorage(): array
+    {
+        $backups = $this->readBackupsFromStorage();
+
+        Cache::put(self::CACHE_KEY, $backups, now()->addMinutes(self::CACHE_TTL_MINUTES));
+
+        return $backups;
+    }
+
+    /**
+     * Read and parse backup metadata from R2, throwing on storage errors.
+     *
+     * @return array<int, array<string, mixed>>
+     *
+     * @throws Throwable
+     */
+    private function readBackupsFromStorage(): array
+    {
+
+        $contents = Storage::disk('r2')->listContents(self::BACKUP_DIRECTORY);
+        $backups = [];
+
+        foreach ($contents as $item) {
+            if (! $item->isFile()) {
+                continue;
+            }
+
+            $cleanPath = str_replace('\\', '/', $item->path());
+            $filename = basename($cleanPath);
+
+            if (! preg_match('/^backup-sja-(scheduled|manual)-(\d{4}-\d{2}-\d{2}-\d{6})\.sql\.gz\.enc$/', $filename, $matches)) {
+                continue;
+            }
+
+            $source = $matches[1];
+            $dateString = $matches[2];
+
+            try {
+                $createdAt = Carbon::createFromFormat('Y-m-d-His', $dateString);
+            } catch (Throwable) {
+                $createdAt = now();
+            }
+
+            $size = (int) ($item->fileSize() ?? 0);
+
+            $backups[] = [
+                'filename' => $filename,
+                'r2_path' => $cleanPath,
+                'source' => $source,
+                'size' => $size,
+                'size_formatted' => $this->formatBytes($size),
+                'created_at' => $createdAt,
+                'created_at_formatted' => $createdAt ? $createdAt->format('d M Y, H:i:s') : '-',
+            ];
+        }
+
+        // Sort descending: newest backups first
+        usort($backups, function ($a, $b) {
+            return $b['created_at']->getTimestamp() <=> $a['created_at']->getTimestamp();
+        });
+
+        return $backups;
+
     }
 
     /**

@@ -82,6 +82,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('manage/backups', [DatabaseBackupController::class, 'store'])
         ->middleware('throttle:5,60')
         ->name('backups.store');
+    Route::post('manage/backups/sync', [DatabaseBackupController::class, 'sync'])
+        ->middleware('throttle:10,1')
+        ->name('backups.sync');
     Route::get('manage/backups/{filename}/download', [DatabaseBackupController::class, 'download'])
         ->name('backups.download');
 });

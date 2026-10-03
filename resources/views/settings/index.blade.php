@@ -83,7 +83,11 @@
                     <h6 class="card-title text-base font-semibold text-default-800">Database Backups (Cloudflare R2)</h6>
                     <p class="text-xs text-default-400 mt-1">Monthly MySQL backups encrypted with AES-256-CBC, kept on a rolling 12-month retention and stored securely on Cloudflare R2.</p>
                 </div>
-                <div>
+                <div class="flex items-center gap-2">
+                    <button type="button" id="btn-sync-backups" aria-label="Sync backups" title="Sync with Cloudflare R2" class="btn border border-default-200 text-default-700 text-xs px-3.5 py-2 inline-flex items-center gap-2 rounded-md hover:bg-default-100 transition-colors cursor-pointer">
+                        <span id="sync-backups-icon" class="inline-flex"><i data-lucide="refresh-cw" class="size-4"></i></span>
+                        <span>Sync</span>
+                    </button>
                     <button type="button" id="btn-manual-backup" data-hs-overlay="#backup-confirm-modal" class="btn bg-primary text-white text-xs px-3.5 py-2 inline-flex items-center gap-2 rounded-md hover:bg-primary-600 transition-colors cursor-pointer shadow-sm">
                         <i data-lucide="database-backup" id="backup-icon" class="size-4"></i>
                         <svg id="backup-spinner" class="hidden animate-spin size-4 text-white shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -322,6 +326,60 @@ document.addEventListener('DOMContentLoaded', function () {
             if (backupText) {
                 backupText.textContent = 'Backup Now';
             }
+        });
+    });
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const btnSync = document.getElementById('btn-sync-backups');
+    if (!btnSync) return;
+
+    const syncIcon = document.getElementById('sync-backups-icon');
+    const alertSuccess = document.getElementById('backup-alert-success');
+    const alertError = document.getElementById('backup-alert-error');
+    const successText = document.getElementById('backup-success-text');
+    const errorText = document.getElementById('backup-error-text');
+    let isSyncing = false;
+
+    btnSync.addEventListener('click', function () {
+        if (isSyncing) return;
+        isSyncing = true;
+        btnSync.disabled = true;
+        btnSync.setAttribute('aria-busy', 'true');
+        btnSync.classList.add('pointer-events-none', 'opacity-60');
+        if (syncIcon) syncIcon.classList.add('animate-spin');
+        if (alertSuccess) alertSuccess.classList.add('hidden');
+        if (alertError) alertError.classList.add('hidden');
+
+        fetch("{{ route('backups.sync') }}", {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json',
+            },
+        })
+        .then(async (response) => {
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                throw new Error(data.message || 'Sync failed. Please try again.');
+            }
+            return data;
+        })
+        .then((data) => {
+            if (successText) successText.textContent = data.message || 'Sync complete.';
+            if (alertSuccess) alertSuccess.classList.remove('hidden');
+            setTimeout(() => window.location.reload(), 1200);
+        })
+        .catch((error) => {
+            if (errorText) errorText.textContent = error.message || 'Sync failed. Please try again.';
+            if (alertError) alertError.classList.remove('hidden');
+
+            isSyncing = false;
+            btnSync.disabled = false;
+            btnSync.removeAttribute('aria-busy');
+            btnSync.classList.remove('pointer-events-none', 'opacity-60');
+            if (syncIcon) syncIcon.classList.remove('animate-spin');
         });
     });
 });

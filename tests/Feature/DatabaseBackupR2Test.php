@@ -188,4 +188,67 @@ class DatabaseBackupR2Test extends TestCase
                 && ($process->environment['MYSQL_PWD'] ?? '') === 'secret-db-pass';
         });
     }
+
+    public function test_sync_replaces_cached_list_with_current_bucket_content(): void
+    {
+        $service = app(DatabaseBackupService::class);
+        $dir = DatabaseBackupService::BACKUP_DIRECTORY;
+        Storage::disk('r2')->put($dir.'/backup-sja-manual-2026-01-01-000000.sql.gz.enc', 'a');
+        Storage::disk('r2')->put($dir.'/backup-sja-manual-2026-01-02-000000.sql.gz.enc', 'b');
+        $this->assertCount(2, $service->listBackups());
+
+        Storage::disk('r2')->delete($dir.'/backup-sja-manual-2026-01-01-000000.sql.gz.enc');
+        Storage::disk('r2')->put($dir.'/backup-sja-manual-2026-01-03-000000.sql.gz.enc', 'c');
+
+        $this->actingAs($this->user)
+            ->postJson(route('backups.sync'))
+            ->assertOk()
+            ->assertJson(['status' => 'success', 'count' => 2]);
+
+        $filenames = array_column($service->listBackups(), 'filename');
+        $this->assertNotContains('backup-sja-manual-2026-01-01-000000.sql.gz.enc', $filenames);
+        $this->assertContains('backup-sja-manual-2026-01-03-000000.sql.gz.enc', $filenames);
+    }
+
+    public function test_sync_failure_keeps_previous_cached_list(): void
+    {
+        $service = app(DatabaseBackupService::class);
+        Storage::disk('r2')->put(DatabaseBackupService::BACKUP_DIRECTORY.'/backup-sja-manual-2026-01-01-000000.sql.gz.enc', 'a');
+        $this->assertCount(1, $service->listBackups());
+
+        Storage::shouldReceive('disk')->with('r2')->andThrow(new \RuntimeException('R2 down'));
+
+        $this->actingAs($this->user)
+            ->postJson(route('backups.sync'))
+            ->assertStatus(500)
+            ->assertJson(['status' => 'error'])
+            ->assertJsonMissing(['R2 down']);
+
+        $this->assertCount(1, $service->listBackups());
+    }
+
+    public function test_sync_requires_authentication(): void
+    {
+        $this->post(route('backups.sync'))->assertRedirect(route('login'));
+    }
+
+    public function test_sync_is_rate_limited_to_ten_per_minute(): void
+    {
+        $this->actingAs($this->user);
+
+        for ($i = 0; $i < 10; $i++) {
+            $this->postJson(route('backups.sync'))->assertOk();
+        }
+
+        $this->postJson(route('backups.sync'))->assertStatus(429);
+    }
+
+    public function test_settings_page_renders_sync_button(): void
+    {
+        $this->actingAs($this->user)
+            ->get(route('settings.index'))
+            ->assertOk()
+            ->assertSee('id="btn-sync-backups"', false)
+            ->assertSee('aria-label="Sync backups"', false);
+    }
 }
