@@ -342,6 +342,15 @@ document.addEventListener('DOMContentLoaded', function () {
     const errorText = document.getElementById('backup-error-text');
     let isSyncing = false;
 
+    try {
+        const pendingMessage = sessionStorage.getItem('backupSyncMessage');
+        if (pendingMessage) {
+            sessionStorage.removeItem('backupSyncMessage');
+            if (successText) successText.textContent = pendingMessage;
+            if (alertSuccess) alertSuccess.classList.remove('hidden');
+        }
+    } catch (e) {}
+
     btnSync.addEventListener('click', function () {
         if (isSyncing) return;
         isSyncing = true;
@@ -367,9 +376,11 @@ document.addEventListener('DOMContentLoaded', function () {
             return data;
         })
         .then((data) => {
-            if (successText) successText.textContent = data.message || 'Sync complete.';
-            if (alertSuccess) alertSuccess.classList.remove('hidden');
-            setTimeout(() => window.location.reload(), 1200);
+            // Reload first; the banner is shown once the refreshed list has loaded.
+            try {
+                sessionStorage.setItem('backupSyncMessage', data.message || 'Sync complete.');
+            } catch (e) {}
+            window.location.reload();
         })
         .catch((error) => {
             if (errorText) errorText.textContent = error.message || 'Sync failed. Please try again.';
