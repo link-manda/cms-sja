@@ -82,3 +82,4 @@ Artisan::command('projects:test-r2', function () {
 })->purpose('Menguji koneksi, upload, presigned URL, dan penghapusan storage Cloudflare R2');
 
 Schedule::command('projects:prune-temp-gallery')->daily();
+Schedule::command('db:backup-r2')->monthlyOn(1, '02:00')->withoutOverlapping();

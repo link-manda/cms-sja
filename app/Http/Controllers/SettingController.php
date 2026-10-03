@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Setting;
+use App\Services\DatabaseBackupService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -13,14 +14,17 @@ class SettingController extends Controller
     /**
      * Display the settings form.
      */
-    public function index(): View
+    public function index(DatabaseBackupService $backupService): View
     {
         // Get all settings and group them by 'group'
         $settings = Setting::all()->groupBy('group');
 
+        // Fetch database backups from R2 with graceful fallback
+        $backups = $backupService->listBackups();
+
         // If settings table is empty, we provide some default structural groupings
         // In a real scenario, you might want to seed default settings
-        return view('settings.index', compact('settings'));
+        return view('settings.index', compact('settings', 'backups'));
     }
 
     /**

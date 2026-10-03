@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CalculatorOptionController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\DatabaseBackupController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\PublicCalculatorController;
@@ -20,7 +21,7 @@ Route::get('/', function () {
 Route::get('/projects', [PublicProjectController::class, 'index'])->name('public.projects.index');
 Route::get('/case-study/{slug}', [PublicProjectController::class, 'show'])->name('public.projects.show');
 
-// Public pricing calculator — WAJIB di atas grup catch-all {any} agar tidak tertangkap auth middleware.
+// Public pricing calculator: WAJIB di atas grup catch-all {any} agar tidak tertangkap auth middleware.
 Route::get('/pricing-calculator', [PublicCalculatorController::class, 'index'])->name('public.calculator.index');
 
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -75,6 +76,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/settings', [SettingController::class, 'update'])
         ->middleware('throttle:10,1')
         ->name('settings.update');
+
+    // Database Backup Management (Cloudflare R2)
+    Route::get('manage/backups', [DatabaseBackupController::class, 'index'])->name('backups.index');
+    Route::post('manage/backups', [DatabaseBackupController::class, 'store'])
+        ->middleware('throttle:5,60')
+        ->name('backups.store');
+    Route::get('manage/backups/{filename}/download', [DatabaseBackupController::class, 'download'])
+        ->name('backups.download');
 });
 
 Route::middleware('auth')->group(function () {
