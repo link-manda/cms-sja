@@ -33,7 +33,7 @@ class DatabaseBackupController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Cadangan database berhasil dibuat dan dienkripsi ke Cloudflare R2.',
+                'message' => 'Database backup created and encrypted to Cloudflare R2 successfully.',
                 'backup' => $result,
             ]);
         } catch (Throwable $e) {
@@ -42,8 +42,8 @@ class DatabaseBackupController extends Controller
             ]);
 
             $message = app()->hasDebugModeEnabled()
-                ? 'Gagal membuat cadangan database: '.$e->getMessage()
-                : 'Gagal membuat cadangan database. Silakan periksa log server.';
+                ? 'Failed to create database backup: '.$e->getMessage()
+                : 'Failed to create database backup. Please check the server logs.';
 
             return response()->json([
                 'status' => 'error',
@@ -58,7 +58,7 @@ class DatabaseBackupController extends Controller
     public function download(string $filename, DatabaseBackupService $backupService): StreamedResponse
     {
         if (! preg_match('/^backup-sja-(scheduled|manual)-(\d{4}-\d{2}-\d{2}-\d{6})\.sql\.gz\.enc$/', $filename)) {
-            abort(404, 'Berkas cadangan tidak valid.');
+            abort(404, 'Invalid backup file.');
         }
 
         $r2Path = DatabaseBackupService::BACKUP_DIRECTORY.'/'.$filename;
@@ -85,7 +85,7 @@ class DatabaseBackupController extends Controller
                 'exception' => $e,
             ]);
 
-            abort(404, 'Berkas cadangan tidak ditemukan atau gagal didekripsi.');
+            abort(404, 'Backup file not found or failed to decrypt.');
         }
     }
 }

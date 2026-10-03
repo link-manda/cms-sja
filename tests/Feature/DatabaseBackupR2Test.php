@@ -156,9 +156,9 @@ class DatabaseBackupR2Test extends TestCase
 
         $response->assertOk();
         $response->assertViewHas('backups');
-        $response->assertSee('Cadangan Database (Cloudflare R2)');
-        $response->assertSee('Cadangkan Sekarang');
-        $response->assertSee('Belum Ada Cadangan Database');
+        $response->assertSee('Database Backups (Cloudflare R2)');
+        $response->assertSee('Backup Now');
+        $response->assertSee('No Database Backups Yet');
     }
 
     public function test_invalid_download_filename_is_rejected(): void

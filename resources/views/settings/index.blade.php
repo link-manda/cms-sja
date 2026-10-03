@@ -80,17 +80,17 @@
         <div class="card" id="backup-card">
             <div class="card-header flex justify-between items-center flex-wrap gap-4 border-b border-default-200">
                 <div>
-                    <h6 class="card-title text-base font-semibold text-default-800">Cadangan Database (Cloudflare R2)</h6>
-                    <p class="text-xs text-default-400 mt-1">Cadangan bulanan MySQL terenkripsi AES-256-CBC dengan retensi bergulir 12 bulan yang tersimpan aman di Cloudflare R2.</p>
+                    <h6 class="card-title text-base font-semibold text-default-800">Database Backups (Cloudflare R2)</h6>
+                    <p class="text-xs text-default-400 mt-1">Monthly MySQL backups encrypted with AES-256-CBC, kept on a rolling 12-month retention and stored securely on Cloudflare R2.</p>
                 </div>
                 <div>
                     <button type="button" id="btn-manual-backup" data-hs-overlay="#backup-confirm-modal" class="btn bg-primary text-white text-xs px-3.5 py-2 inline-flex items-center gap-2 rounded-md hover:bg-primary-600 transition-colors cursor-pointer shadow-sm">
                         <i data-lucide="database-backup" id="backup-icon" class="size-4"></i>
-                        <svg id="backup-spinner" class="hidden inline-flex animate-spin size-4 text-white shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <svg id="backup-spinner" class="hidden animate-spin size-4 text-white shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        <span id="backup-btn-text">Cadangkan Sekarang</span>
+                        <span id="backup-btn-text">Backup Now</span>
                     </button>
                 </div>
             </div>
@@ -103,8 +103,8 @@
                             <i data-lucide="calendar-clock" class="size-4"></i>
                         </div>
                         <div>
-                            <div class="text-[11px] text-default-400 font-medium">Jadwal Otomatis</div>
-                            <div class="text-xs font-semibold text-default-700">Bulanan (Tgl 1, 02:00 UTC)</div>
+                            <div class="text-[11px] text-default-400 font-medium">Automatic Schedule</div>
+                            <div class="text-xs font-semibold text-default-700">Monthly (1st, 02:00 UTC)</div>
                         </div>
                     </div>
                     <div class="p-3 rounded-lg border border-default-200 bg-default-50/50 flex items-center gap-3">
@@ -112,7 +112,7 @@
                             <i data-lucide="shield-check" class="size-4"></i>
                         </div>
                         <div>
-                            <div class="text-[11px] text-default-400 font-medium">Keamanan Data</div>
+                            <div class="text-[11px] text-default-400 font-medium">Data Security</div>
                             <div class="text-xs font-semibold text-default-700">AES-256-CBC (HKDF App Key)</div>
                         </div>
                     </div>
@@ -121,8 +121,8 @@
                             <i data-lucide="history" class="size-4"></i>
                         </div>
                         <div>
-                            <div class="text-[11px] text-default-400 font-medium">Kebijakan Retensi</div>
-                            <div class="text-xs font-semibold text-default-700">12 Siklus / 30 Hari Manual</div>
+                            <div class="text-[11px] text-default-400 font-medium">Retention Policy</div>
+                            <div class="text-xs font-semibold text-default-700">12 Cycles / 30 Days Manual</div>
                         </div>
                     </div>
                 </div>
@@ -130,11 +130,11 @@
                 <!-- Alert Messages -->
                 <div id="backup-alert-success" class="hidden bg-success/10 text-success border border-success/20 text-sm rounded-md py-3 px-5 mb-5 flex items-center gap-2">
                     <i data-lucide="check-circle" class="size-4 shrink-0"></i>
-                    <span id="backup-success-text">Cadangan database berhasil dibuat!</span>
+                    <span id="backup-success-text">Database backup created successfully!</span>
                 </div>
                 <div id="backup-alert-error" class="hidden bg-danger/10 text-danger border border-danger/20 text-sm rounded-md py-3 px-5 mb-5 flex items-center gap-2">
                     <i data-lucide="alert-triangle" class="size-4 shrink-0"></i>
-                    <span id="backup-error-text">Gagal membuat cadangan database.</span>
+                    <span id="backup-error-text">Failed to create database backup.</span>
                 </div>
 
                 <!-- Backups Table -->
@@ -142,11 +142,11 @@
                     <table class="min-w-full divide-y divide-default-200 text-left text-xs">
                         <thead class="bg-default-100/75 text-default-600 font-semibold uppercase tracking-wider">
                             <tr>
-                                <th scope="col" class="px-4 py-3">Waktu Pembuatan</th>
-                                <th scope="col" class="px-4 py-3">Sumber</th>
-                                <th scope="col" class="px-4 py-3">Nama Berkas</th>
-                                <th scope="col" class="px-4 py-3">Ukuran</th>
-                                <th scope="col" class="px-4 py-3 text-right">Aksi</th>
+                                <th scope="col" class="px-4 py-3">Created At</th>
+                                <th scope="col" class="px-4 py-3">Source</th>
+                                <th scope="col" class="px-4 py-3">File Name</th>
+                                <th scope="col" class="px-4 py-3">Size</th>
+                                <th scope="col" class="px-4 py-3 text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-default-200 bg-white dark:bg-default-50 font-normal text-default-700">
@@ -158,7 +158,7 @@
                                     <td class="px-4 py-3 whitespace-nowrap">
                                         @if ($backup['source'] === 'scheduled')
                                             <span class="px-2 py-0.5 text-[11px] font-semibold rounded inline-flex items-center gap-1 bg-info/10 text-info border border-info/20">
-                                                <i data-lucide="calendar" class="size-3"></i> Terjadwal
+                                                <i data-lucide="calendar" class="size-3"></i> Scheduled
                                             </span>
                                         @else
                                             <span class="px-2 py-0.5 text-[11px] font-semibold rounded inline-flex items-center gap-1 bg-primary/10 text-primary border border-primary/20">
@@ -173,9 +173,9 @@
                                         {{ $backup['size_formatted'] }}
                                     </td>
                                     <td class="px-4 py-3 whitespace-nowrap text-right">
-                                        <a href="{{ route('backups.download', $backup['filename']) }}" class="btn btn-sm bg-default-100 hover:bg-default-200 text-default-800 text-xs px-2.5 py-1.5 inline-flex items-center gap-1.5 rounded transition-colors" title="Unduh Berkas Terdekripsi (.sql.gz)">
+                                        <a href="{{ route('backups.download', $backup['filename']) }}" class="btn btn-sm bg-default-100 hover:bg-default-200 text-default-800 text-xs px-2.5 py-1.5 inline-flex items-center gap-1.5 rounded transition-colors" title="Download decrypted file (.sql.gz)">
                                             <i data-lucide="download" class="size-3.5"></i>
-                                            <span>Unduh (.sql.gz)</span>
+                                            <span>Download (.sql.gz)</span>
                                         </a>
                                     </td>
                                 </tr>
@@ -186,8 +186,8 @@
                                             <div class="p-3 rounded-full bg-default-100 text-default-400 mb-1">
                                                 <i data-lucide="database" class="size-6"></i>
                                             </div>
-                                            <p class="font-medium text-default-600 text-sm">Belum Ada Cadangan Database</p>
-                                            <p class="text-xs text-default-400 max-w-md">Cadangan otomatis dibuat setiap awal bulan pukul 02:00, atau Anda dapat menekan tombol "Cadangkan Sekarang" di atas untuk membuat cadangan langsung ke Cloudflare R2.</p>
+                                            <p class="font-medium text-default-600 text-sm">No Database Backups Yet</p>
+                                            <p class="text-xs text-default-400 max-w-md">Backups are created automatically at 02:00 on the 1st of every month, or you can press the "Backup Now" button above to create one directly on Cloudflare R2.</p>
                                         </div>
                                     </td>
                                 </tr>
@@ -207,13 +207,13 @@
                     <div class="inline-flex justify-center items-center size-[62px] rounded-full border-4 border-primary/20 bg-primary/10 text-primary mb-4">
                         <i class="size-6" data-lucide="database-backup"></i>
                     </div>
-                    <h3 id="backup-modal-title" class="mb-2 text-xl font-bold text-default-800">Buat Cadangan Database?</h3>
-                    <p class="text-default-500 font-sans text-sm">Sistem akan mengekspor snapshot basis data MySQL saat ini, mengompresi, mengenkripsi dengan AES-256-CBC, dan mengunggahnya secara aman ke Cloudflare R2.</p>
+                    <h3 id="backup-modal-title" class="mb-2 text-xl font-bold text-default-800">Create Database Backup?</h3>
+                    <p class="text-default-500 font-sans text-sm">The system will export a snapshot of the current MySQL database, compress it, encrypt it with AES-256-CBC, and securely upload it to Cloudflare R2.</p>
                     <div class="mt-8 flex justify-center gap-3">
-                        <button type="button" class="btn bg-default-200 text-default-800 hover:bg-default-300 transition-colors" data-hs-overlay="#backup-confirm-modal">Batal</button>
+                        <button type="button" class="btn bg-default-200 text-default-800 hover:bg-default-300 transition-colors" data-hs-overlay="#backup-confirm-modal">Cancel</button>
                         <button type="button" id="modal-confirm-backup-btn" class="btn bg-primary text-white hover:bg-primary-600 transition-colors shadow-sm inline-flex items-center gap-2">
                             <i data-lucide="database-backup" class="size-4"></i>
-                            <span>Ya, Cadangkan Sekarang</span>
+                            <span>Yes, Back Up Now</span>
                         </button>
                     </div>
                 </div>
@@ -262,7 +262,7 @@ document.addEventListener('DOMContentLoaded', function () {
             backupSpinner.classList.remove('hidden');
         }
         if (backupText) {
-            backupText.textContent = 'Mencadangkan database...';
+            backupText.textContent = 'Backing up database...';
         }
         if (alertSuccess) alertSuccess.classList.add('hidden');
         if (alertError) alertError.classList.add('hidden');
@@ -278,13 +278,13 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(async (response) => {
             const data = await response.json().catch(() => ({}));
             if (!response.ok) {
-                throw new Error(data.message || 'Gagal membuat cadangan database.');
+                throw new Error(data.message || 'Failed to create database backup.');
             }
             return data;
         })
         .then((data) => {
             if (successText) {
-                successText.textContent = data.message || 'Cadangan database berhasil dibuat! Memperbarui halaman...';
+                successText.textContent = data.message || 'Database backup created successfully! Refreshing page...';
             }
             if (alertSuccess) {
                 alertSuccess.classList.remove('hidden');
@@ -299,7 +299,7 @@ document.addEventListener('DOMContentLoaded', function () {
         })
         .catch((error) => {
             if (errorText) {
-                errorText.textContent = error.message || 'Terjadi kesalahan saat memproses cadangan.';
+                errorText.textContent = error.message || 'An error occurred while processing the backup.';
             }
             if (alertError) {
                 alertError.classList.remove('hidden');
@@ -320,7 +320,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 backupSpinner.classList.add('hidden');
             }
             if (backupText) {
-                backupText.textContent = 'Cadangkan Sekarang';
+                backupText.textContent = 'Backup Now';
             }
         });
     });
